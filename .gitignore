@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (contains Supabase keys)
+.env
+.env.local
+.env*.local
+
+# Bank statements (personal financial data)
+*.csv
+
+# Claude memory
+.claude/
+
+# OS
+.DS_Store
