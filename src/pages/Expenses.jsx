@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { syncToRecurring } from '../lib/syncRecurring'
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -48,6 +49,12 @@ function ExpenseForm({ categories, onSaved, editItem, onCancel }) {
 
     setSaving(false)
     if (error) { setError(error.message); return }
+
+    // If marked as DD or SO, sync to recurring_payments
+    if (payload.payment_type === 'DD' || payload.payment_type === 'SO') {
+      await syncToRecurring([{ ...payload, date: form.date }], user.id)
+    }
+
     onSaved()
     if (!editItem) setForm({ date: today, amount: '', description: '', category_id: '', payment_type: '', notes: '' })
   }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Papa from 'papaparse'
 import { supabase } from '../lib/supabase'
+import { syncToRecurring } from '../lib/syncRecurring'
 
 // Keyword → category name mapping (matched against transaction description)
 const CATEGORY_KEYWORDS = {
@@ -220,6 +221,8 @@ export default function Import() {
   const [bank, setBank] = useState('')
   const [importing, setImporting] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [savedCount, setSavedCount] = useState(0)
+  const [recurringAdded, setRecurringAdded] = useState(0)
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
   const fileRef = useRef()
@@ -317,9 +320,16 @@ export default function Import() {
       }))
 
     const { error } = await supabase.from('expenses').insert(toInsert)
+    if (error) { setImporting(false); setError(error.message); return }
+
+    // Sync any DD/SO expenses into recurring_payments
+    const ddso = toInsert.filter(e => e.payment_type === 'DD' || e.payment_type === 'SO')
+    const added = await syncToRecurring(ddso, user.id)
+
     setImporting(false)
-    if (error) { setError(error.message); return }
     setSaved(true)
+    setSavedCount(toInsert.length)
+    setRecurringAdded(added)
     setRows([])
     if (fileRef.current) fileRef.current.value = ''
     // Refresh learned map so next import in this session benefits too
@@ -398,7 +408,12 @@ export default function Import() {
         )}
         {checking && <p className="text-indigo-600 text-sm mt-3 bg-indigo-50 px-3 py-2 rounded-lg">Checking for duplicates...</p>}
         {error && <p className="text-red-600 text-sm mt-3 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-        {saved && <p className="text-green-600 text-sm mt-3 bg-green-50 px-3 py-2 rounded-lg">✓ {includedCount} transactions imported successfully.</p>}
+        {saved && (
+          <p className="text-green-600 text-sm mt-3 bg-green-50 px-3 py-2 rounded-lg">
+            ✓ {savedCount} transactions imported.
+            {recurringAdded > 0 && <span className="font-medium"> {recurringAdded} DD/SO added to Direct Debits.</span>}
+          </p>
+        )}
         {!checking && (rows.some(r => r.duplicate) || incomeRows.some(r => r.duplicate)) && (
           <p className="text-amber-700 text-sm mt-3 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
             ⚠️ <strong>{[...rows, ...incomeRows].filter(r => r.duplicate).length} duplicate{[...rows, ...incomeRows].filter(r => r.duplicate).length > 1 ? 's' : ''} detected</strong> — these already exist in your records and have been unchecked. You can still tick them to import again if needed.
