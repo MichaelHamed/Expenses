@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+/* ── Dark mode ─────────────────────────────────────────────────────────────
+   Applied via html.dark. Overrides Tailwind's CSS color variables so that
+   every bg-gray-*, text-gray-*, border-gray-* utility flips automatically.
+   bg-white is handled separately since --color-white is also used by text-white.
+────────────────────────────────────────────────────────────────────────── */
+html.dark {
+  color-scheme: dark;
+  --color-gray-50:  #0f172a;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #334155;
+  --color-gray-300: #475569;
+  --color-gray-400: #64748b;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #f8fafc;
+}
+
+/* Cards and panels use bg-white — override separately so text-white is unaffected */
+html.dark .bg-white { background-color: #1e293b; }
+html.dark .hover\:bg-gray-50:hover { background-color: #1e293b; }
+html.dark .hover\:bg-gray-100:hover { background-color: #334155; }
+
+/* Form elements */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+html.dark select,
+html.dark textarea {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+/* Coloured tint backgrounds */
+html.dark .bg-indigo-50  { background-color: #1e1b4b; }
+html.dark .bg-green-50   { background-color: #052e16; }
+html.dark .bg-amber-50   { background-color: #1c1009; }
+html.dark .bg-red-50     { background-color: #1c0a0a; }
+html.dark .bg-amber-50\/30 { background-color: rgb(28 16 9 / 0.3); }
+
+/* Recharts internals */
+html.dark .recharts-cartesian-grid-horizontal line,
+html.dark .recharts-cartesian-grid-vertical line { stroke: #334155; }
+html.dark .recharts-text { fill: #94a3b8; }

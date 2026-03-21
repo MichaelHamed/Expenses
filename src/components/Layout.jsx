@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -13,6 +14,12 @@ const navItems = [
 
 export default function Layout({ session }) {
   const navigate = useNavigate()
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }, [dark])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -46,7 +53,14 @@ export default function Layout({ session }) {
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 border-t border-gray-100">
+        <div className="p-3 border-t border-gray-100 space-y-1">
+          <button
+            onClick={() => setDark(d => !d)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <span>{dark ? '☀️' : '🌙'}</span>
+            {dark ? 'Light mode' : 'Dark mode'}
+          </button>
           <button
             onClick={handleSignOut}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
