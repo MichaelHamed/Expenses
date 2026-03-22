@@ -93,10 +93,19 @@ export default function Dashboard() {
   const [recentExpenses, setRecentExpenses] = useState([])
   const [upcoming, setUpcoming] = useState([])
   const [userEmail, setUserEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUserEmail(user?.email || ''))
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email || '')
+      // Microsoft SSO provides full_name or name in user_metadata
+      const meta = user?.user_metadata || {}
+      const fullName = meta.full_name || meta.name || ''
+      const firstName = fullName.trim().split(' ')[0]
+        || (user?.email || '').split('@')[0].split('.')[0]
+      setDisplayName(firstName.charAt(0).toUpperCase() + firstName.slice(1))
+    })
   }, [])
 
   useEffect(() => { fetchAll() }, [year, month])
@@ -168,8 +177,6 @@ export default function Dashboard() {
     : `${Math.round(vsLastMonth)}% vs last month`
   const vsColor = vsLastMonth === null ? '' : vsLastMonth > 0 ? 'text-red-300' : 'text-green-300'
 
-  const firstName = userEmail.split('@')[0].split('.')[0]
-  const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1)
 
   return (
     <div>
