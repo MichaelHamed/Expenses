@@ -191,7 +191,6 @@ export default function Expenses() {
   const [deleting, setDeleting] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
   const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false)
 
   useEffect(() => { fetchCategories() }, [])
   useEffect(() => { fetchExpenses() }, [year, month])
@@ -347,25 +346,17 @@ export default function Expenses() {
         </div>
       </div>
 
-      {/* Mobile: Add expense button */}
-      <div className="md:hidden mb-4">
-        <button onClick={() => { setShowForm(f => !f); setEditItem(null) }}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
-          {showForm ? '✕ Cancel' : '+ Add Expense'}
-        </button>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Add form — always visible on desktop, toggled on mobile */}
-        <div className={`col-span-1 bg-white rounded-2xl border border-gray-200 p-6 ${showForm || editItem ? 'block' : 'hidden md:block'}`}>
+        {/* Add form — always visible on desktop, shown on mobile only when editing */}
+        <div className={`col-span-1 bg-white rounded-2xl border border-gray-200 p-6 ${editItem ? 'block' : 'hidden md:block'}`}>
           <h3 className="font-semibold text-gray-900 mb-4">{editItem ? 'Edit Expense' : 'Add Expense'}</h3>
           <ExpenseForm
             key={editItem?.id || 'new'}
             categories={categories}
             suggestions={suggestions}
-            onSaved={() => { fetchExpenses(); setShowForm(false) }}
+            onSaved={() => { fetchExpenses(); setEditItem(null) }}
             editItem={editItem}
-            onCancel={() => { setEditItem(null); setShowForm(false) }}
+            onCancel={() => setEditItem(null)}
           />
         </div>
 
@@ -403,7 +394,7 @@ export default function Expenses() {
             <div className="flex items-center gap-3">
               {filtered.length > 0 && (
                 <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                  className="w-4 h-4 rounded accent-indigo-600 cursor-pointer" title="Select all visible" />
+                  className="hidden md:block w-4 h-4 rounded accent-indigo-600 cursor-pointer" title="Select all visible" />
               )}
               <h3 className="font-semibold text-gray-900">
                 {filterCategory === 'all' ? `${MONTHS[month - 1]} ${year}` :
@@ -413,7 +404,7 @@ export default function Expenses() {
             </div>
             <div className="flex items-center gap-2">
               {selected.size > 0 && (
-                <>
+                <div className="hidden md:flex items-center gap-2">
                   <span className="text-xs text-gray-500 font-medium">{selected.size} selected</span>
                   <select
                     defaultValue=""
@@ -430,7 +421,7 @@ export default function Expenses() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 disabled:opacity-50 transition-colors">
                     🗑️ Delete
                   </button>
-                </>
+                </div>
               )}
               <span className="text-sm font-semibold text-gray-700">Total: {fmt(total)}</span>
             </div>
@@ -453,7 +444,7 @@ export default function Expenses() {
                   <div className="flex items-center gap-3">
                     <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleSelect(e.id)}
                       onClick={ev => ev.stopPropagation()}
-                      className="w-4 h-4 rounded accent-indigo-600 cursor-pointer flex-shrink-0" />
+                      className="hidden md:block w-4 h-4 rounded accent-indigo-600 cursor-pointer flex-shrink-0" />
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: e.categories?.color || '#94a3b8' }} />
                     <div>
@@ -469,11 +460,11 @@ export default function Expenses() {
                       {e.notes && <p className="text-xs text-indigo-400 italic mt-0.5">{e.notes}</p>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3" onClick={ev => ev.stopPropagation()}>
+                  <div className="flex flex-col items-end gap-1" onClick={ev => ev.stopPropagation()}>
                     <span className="text-sm font-semibold text-gray-800">{fmt(e.amount)}</span>
-                    <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                    <div className="flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button onClick={() => setEditItem(e)} className="text-xs text-indigo-600 hover:underline">Edit</button>
-                      <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                      <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 hover:underline">Del</button>
                     </div>
                   </div>
                 </div>

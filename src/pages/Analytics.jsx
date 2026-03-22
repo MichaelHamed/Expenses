@@ -167,7 +167,7 @@ export default function Analytics() {
         <div className="space-y-5">
 
           {/* Summary stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Total Income', value: fmt(totalIncome), color: 'text-green-600' },
               { label: 'Total Spent', value: fmt(totalSpent), color: 'text-red-500' },
@@ -200,8 +200,8 @@ export default function Analytics() {
           </div>
 
           {/* Savings rate + best/worst */}
-          <div className="grid grid-cols-3 gap-5">
-            <div className="col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-1">Savings Rate by Month</h3>
               <p className="text-xs text-gray-400 mb-4">% of income saved (negative = overspent)</p>
               <ResponsiveContainer width="100%" height={160}>
@@ -217,8 +217,8 @@ export default function Analytics() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4">
-              <h3 className="font-semibold text-gray-900">Highlights</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4 md:flex-col flex-row flex-wrap">
+              <h3 className="font-semibold text-gray-900 w-full">Highlights</h3>
               {bestMonth && (
                 <div className="bg-green-50 rounded-xl p-4">
                   <p className="text-xs font-medium text-green-600 mb-0.5">Best month</p>
@@ -239,7 +239,7 @@ export default function Analytics() {
           </div>
 
           {/* Top merchants + month-over-month */}
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {/* Top merchants */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
@@ -274,7 +274,7 @@ export default function Analytics() {
             </div>
 
             {/* Month-over-month category comparison */}
-            <div className="col-span-2 bg-white rounded-2xl border border-gray-200 p-6 overflow-x-auto">
+            <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 overflow-x-auto">
               <h3 className="font-semibold text-gray-900 mb-1">Month-over-Month</h3>
               <p className="text-xs text-gray-400 mb-4">Spending per category — last 3 months</p>
               {momData.length === 0 ? (
