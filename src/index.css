@@ -21,8 +21,15 @@ html.dark {
 
 /* Cards and panels use bg-white — override separately so text-white is unaffected */
 html.dark .bg-white { background-color: #1e293b; }
-html.dark .hover\:bg-gray-50:hover { background-color: #1e293b; }
+html.dark .hover\:bg-gray-50:hover { background-color: #263248; }
 html.dark .hover\:bg-gray-100:hover { background-color: #334155; }
+
+/* Progress bar tracks and filter pill backgrounds — must be visible against card bg (#1e293b) */
+html.dark .bg-gray-100 { background-color: #334155; }
+
+/* Dividing lines — border-gray-100 maps to same colour as card bg, so bump it up */
+html.dark .border-gray-100 { border-color: #334155; }
+html.dark .border-gray-50  { border-color: #263248; }
 
 /* Form elements */
 html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
