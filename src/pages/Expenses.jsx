@@ -190,6 +190,7 @@ export default function Expenses() {
   const [deleting, setDeleting] = useState(false)
   const [filterCategory, setFilterCategory] = useState('all')
   const [search, setSearch] = useState('')
+  const [showForm, setShowForm] = useState(false)
 
   useEffect(() => { fetchCategories() }, [])
   useEffect(() => { fetchExpenses() }, [year, month])
@@ -314,16 +315,22 @@ export default function Expenses() {
 
   return (
     <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Expenses</h2>
-          <p className="text-gray-500 text-sm mt-0.5">Record and manage your spending</p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Expenses</h2>
+            <p className="text-gray-500 text-sm mt-0.5">Record and manage your spending</p>
+          </div>
+          <button onClick={exportCSV} title="Export to CSV"
+            className="hidden md:block border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+            Export CSV
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search transactions..."
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <select value={month} onChange={e => setMonth(Number(e.target.value))}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
@@ -333,28 +340,36 @@ export default function Expenses() {
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <button onClick={exportCSV} title="Export to CSV"
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-            Export CSV
+            className="md:hidden border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+            Export
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Add form */}
-        <div className="col-span-1 bg-white rounded-2xl border border-gray-200 p-6">
+      {/* Mobile: Add expense button */}
+      <div className="md:hidden mb-4">
+        <button onClick={() => { setShowForm(f => !f); setEditItem(null) }}
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
+          {showForm ? '✕ Cancel' : '+ Add Expense'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Add form — always visible on desktop, toggled on mobile */}
+        <div className={`col-span-1 bg-white rounded-2xl border border-gray-200 p-6 ${showForm || editItem ? 'block' : 'hidden md:block'}`}>
           <h3 className="font-semibold text-gray-900 mb-4">{editItem ? 'Edit Expense' : 'Add Expense'}</h3>
           <ExpenseForm
             key={editItem?.id || 'new'}
             categories={categories}
             suggestions={suggestions}
-            onSaved={fetchExpenses}
+            onSaved={() => { fetchExpenses(); setShowForm(false) }}
             editItem={editItem}
-            onCancel={() => setEditItem(null)}
+            onCancel={() => { setEditItem(null); setShowForm(false) }}
           />
         </div>
 
         {/* List */}
-        <div className="col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
 
           {/* Filter bar */}
           <div className="flex flex-wrap gap-2 mb-4">

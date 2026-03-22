@@ -191,7 +191,7 @@ export default function Dashboard() {
       {loading ? <div className="text-gray-400 text-sm">Loading...</div> : (
         <>
           {/* TOP ROW */}
-          <div className="grid grid-cols-3 gap-5 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
 
             {/* Greeting card */}
             <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-6 text-white flex flex-col justify-between">
@@ -292,10 +292,10 @@ export default function Dashboard() {
           </div>
 
           {/* BOTTOM ROW */}
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {/* Category breakdown cards */}
-            <div className="col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Category Breakdown</h3>
                 <Link to="/expenses" className="text-xs text-indigo-600 hover:underline">View all</Link>
@@ -303,7 +303,7 @@ export default function Dashboard() {
               {categoryData.length === 0 ? (
                 <div className="text-center py-8 text-gray-300 text-sm">No expenses this month</div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {categoryData.map((c, i) => {
                     const hasBudget = c.budget > 0
                     const budgetPct = hasBudget ? Math.min((c.value / c.budget) * 100, 100) : 0
