@@ -49,11 +49,12 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
     setError('')
     const { data: { user } } = await supabase.auth.getUser()
     const payload = {
-      ...form,
-      amount: parseFloat(form.amount),
+      date: form.date,
+      amount: Math.abs(parseFloat(form.amount)),
+      description: (form.description || '').substring(0, 500).trim(),
       category_id: form.category_id || null,
       payment_type: form.payment_type || null,
-      notes: form.notes || null,
+      notes: (form.notes || '').substring(0, 1000).trim() || null,
       user_id: user.id,
       source: 'manual',
     }

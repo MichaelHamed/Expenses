@@ -3,6 +3,12 @@
     "rewrite": "/index.html"
   },
   "globalHeaders": {
-    "cache-control": "no-store"
+    "cache-control": "no-store",
+    "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://cnxvittagyyfwvckkcya.supabase.co wss://cnxvittagyyfwvckkcya.supabase.co; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    "x-frame-options": "DENY",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "permissions-policy": "geolocation=(), microphone=(), camera=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+    "strict-transport-security": "max-age=31536000; includeSubDomains"
   }
 }

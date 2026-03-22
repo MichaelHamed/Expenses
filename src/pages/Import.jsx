@@ -311,8 +311,8 @@ export default function Import() {
       .filter(r => r.include)
       .map(r => ({
         date: r.date,
-        amount: r.amount,
-        description: r.description,
+        amount: Math.abs(parseFloat(r.amount.toString().replace(/[^0-9.-]/g, ''))),
+        description: (r.description || '').substring(0, 500).trim(),
         category_id: r.category_id || null,
         payment_type: r.paymentType || null,
         user_id: user.id,
