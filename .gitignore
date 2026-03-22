@@ -12,6 +12,9 @@ dist/
 # Bank statements (personal financial data)
 *.csv
 
+# Generated PWA icons (recreated by generate-icons.mjs)
+public/generate-icons.mjs
+
 # Claude memory
 .claude/
 

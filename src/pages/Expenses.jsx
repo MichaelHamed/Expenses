@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { syncToRecurring } from '../lib/syncRecurring'
 
@@ -8,7 +8,7 @@ function fmt(amount) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount || 0)
 }
 
-function ExpenseForm({ categories, onSaved, editItem, onCancel }) {
+function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
     date: editItem?.date || today,
@@ -20,9 +20,27 @@ function ExpenseForm({ categories, onSaved, editItem, onCancel }) {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const descRef = useRef()
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  const filteredSuggestions = form.description.trim().length > 0
+    ? suggestions.filter(s => s.description.toLowerCase().includes(form.description.toLowerCase())).slice(0, 6)
+    : []
+
+  function applySuggestion(s) {
+    setForm(f => ({
+      ...f,
+      description: s.description,
+      amount: s.amount,
+      category_id: s.category_id || '',
+      payment_type: s.payment_type || '',
+    }))
+    setShowSuggestions(false)
+    descRef.current?.blur()
   }
 
   async function handleSubmit(e) {
@@ -74,11 +92,36 @@ function ExpenseForm({ categories, onSaved, editItem, onCancel }) {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
       </div>
-      <div>
+      <div className="relative">
         <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-        <input type="text" value={form.description} onChange={e => set('description', e.target.value)}
+        <input
+          ref={descRef}
+          type="text"
+          value={form.description}
+          onChange={e => { set('description', e.target.value); setShowSuggestions(true) }}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           placeholder="e.g. Tesco weekly shop"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          autoComplete="off"
+        />
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+            {filteredSuggestions.map((s, i) => (
+              <li key={i}
+                onMouseDown={() => applySuggestion(s)}
+                className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 border-b border-gray-50 last:border-0">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-800 truncate">{s.description}</p>
+                  <p className="text-xs text-gray-400">{s.categoryName || 'Uncategorised'}</p>
+                </div>
+                <span className="text-xs font-semibold text-gray-600 ml-2 flex-shrink-0">
+                  £{Number(s.amount).toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
@@ -140,19 +183,44 @@ export default function Expenses() {
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
+  const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState(null)
   const [selected, setSelected] = useState(new Set())
   const [deleting, setDeleting] = useState(false)
-  const [filterCategory, setFilterCategory] = useState('all') // 'all' | 'uncategorised' | category id
+  const [filterCategory, setFilterCategory] = useState('all')
   const [search, setSearch] = useState('')
 
   useEffect(() => { fetchCategories() }, [])
   useEffect(() => { fetchExpenses() }, [year, month])
 
   async function fetchCategories() {
-    const { data } = await supabase.from('categories').select('*').order('name')
-    setCategories(data || [])
+    const { data: cats } = await supabase.from('categories').select('*').order('name')
+    setCategories(cats || [])
+
+    // Build autocomplete suggestions: deduplicated by description, most recent first
+    const { data: hist } = await supabase.from('expenses')
+      .select('description, amount, category_id, payment_type, categories(name)')
+      .not('description', 'is', null)
+      .order('date', { ascending: false })
+      .limit(500)
+
+    const seen = new Set()
+    const deduped = (hist || []).reduce((acc, e) => {
+      const key = e.description.trim().toLowerCase()
+      if (!seen.has(key)) {
+        seen.add(key)
+        acc.push({
+          description: e.description.trim(),
+          amount: e.amount,
+          category_id: e.category_id,
+          payment_type: e.payment_type,
+          categoryName: e.categories?.name || null,
+        })
+      }
+      return acc
+    }, [])
+    setSuggestions(deduped)
   }
 
   async function fetchExpenses() {
@@ -278,6 +346,7 @@ export default function Expenses() {
           <ExpenseForm
             key={editItem?.id || 'new'}
             categories={categories}
+            suggestions={suggestions}
             onSaved={fetchExpenses}
             editItem={editItem}
             onCancel={() => setEditItem(null)}
