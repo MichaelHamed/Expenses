@@ -12,14 +12,123 @@ const navItems = [
   { to: '/categories', label: 'Categories', icon: '🏷️' },
 ]
 
-// Bottom nav shows 5 items; the rest go in a "More" drawer
-const bottomNav = navItems.slice(0, 4)
-const moreItems = navItems.slice(4)
+// ── Quick-add drawer ─────────────────────────────────────────────────────────
+function QuickAddDrawer({ onClose }) {
+  const today = new Date().toISOString().split('T')[0]
+  const [categories, setCategories] = useState([])
+  const [form, setForm] = useState({ date: today, amount: '', description: '', category_id: '', payment_type: '' })
+  const [saving, setSaving] = useState(false)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
 
+  useEffect(() => {
+    supabase.from('categories').select('id, name').order('name').then(({ data }) => setCategories(data || []))
+  }, [])
+
+  function set(field, val) { setForm(f => ({ ...f, [field]: val })) }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('expenses').insert({
+      date: form.date,
+      amount: Math.abs(parseFloat(form.amount)),
+      description: (form.description || '').substring(0, 500).trim(),
+      category_id: form.category_id || null,
+      payment_type: form.payment_type || null,
+      user_id: user.id,
+      source: 'manual',
+    })
+    setSaving(false)
+    if (error) { setError(error.message); return }
+    setDone(true)
+    setTimeout(onClose, 1000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+
+      {/* Drawer */}
+      <div className="relative bg-white rounded-t-3xl px-5 pt-4 pb-10 shadow-xl">
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-900">Add Expense</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+
+        {done ? (
+          <div className="py-10 text-center">
+            <div className="text-5xl mb-3">✅</div>
+            <p className="text-gray-700 font-semibold">Expense saved!</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
+                <input type="date" value={form.date} onChange={e => set('date', e.target.value)} required
+                  className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Amount (£)</label>
+                <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required
+                  placeholder="0.00" inputMode="decimal"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
+              <input type="text" value={form.description} onChange={e => set('description', e.target.value)}
+                placeholder="e.g. Tesco weekly shop" autoComplete="off"
+                className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
+              <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <option value="">— Uncategorised —</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Type</label>
+              <div className="flex gap-2">
+                {[['', 'Normal'], ['DD', 'Direct Debit'], ['SO', 'Standing Order']].map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => set('payment_type', val)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                      form.payment_type === val
+                        ? val === 'DD' ? 'bg-red-500 text-white border-red-500'
+                        : val === 'SO' ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-gray-600 border-gray-300'
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {error && <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-xl">{error}</p>}
+            <button type="submit" disabled={saving}
+              className="w-full bg-indigo-600 text-white py-3.5 rounded-xl text-base font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              {saving ? 'Saving...' : 'Save Expense'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Layout ───────────────────────────────────────────────────────────────────
 export default function Layout({ session }) {
   const navigate = useNavigate()
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
   const [showMore, setShowMore] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -64,45 +173,54 @@ export default function Layout({ session }) {
       </aside>
 
       {/* ── Main content ─────────────────────────────────────── */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-24 md:pb-8">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-28 md:pb-8">
         <Outlet />
       </main>
 
       {/* ── Bottom navigation (mobile only) ──────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-        <div className="flex items-stretch">
-          {bottomNav.map(({ to, label, icon, end }) => (
-            <NavLink key={to} to={to} end={end}
-              className={({ isActive }) =>
-                `flex-1 flex flex-col items-center justify-center py-2 text-xs font-medium transition-colors ${
-                  isActive ? 'text-indigo-600' : 'text-gray-500'
-                }`}>
-              <span className="text-xl mb-0.5">{icon}</span>
-              <span className="text-[10px]">{label}</span>
-            </NavLink>
-          ))}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="flex items-center justify-around px-4 pb-safe">
 
-          {/* More button */}
-          <button onClick={() => setShowMore(true)}
-            className="flex-1 flex flex-col items-center justify-center py-2 text-xs font-medium text-gray-500">
-            <span className="text-xl mb-0.5">☰</span>
-            <span className="text-[10px]">More</span>
+          {/* Dashboard */}
+          <NavLink to="/" end
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center py-3 px-6 text-xs font-medium transition-colors ${
+                isActive ? 'text-indigo-600' : 'text-gray-400'
+              }`}>
+            <span className="text-2xl mb-0.5">📊</span>
+            <span>Dashboard</span>
+          </NavLink>
+
+          {/* Big + button */}
+          <button
+            onClick={() => setShowQuickAdd(true)}
+            className="flex flex-col items-center justify-center -mt-6 w-16 h-16 bg-indigo-600 rounded-full shadow-lg text-white hover:bg-indigo-700 active:scale-95 transition-all">
+            <span className="text-3xl leading-none">+</span>
           </button>
+
+          {/* More */}
+          <button
+            onClick={() => setShowMore(true)}
+            className="flex flex-col items-center justify-center py-3 px-6 text-xs font-medium text-gray-400">
+            <span className="text-2xl mb-0.5">☰</span>
+            <span>More</span>
+          </button>
+
         </div>
       </nav>
+
+      {/* ── Quick-add drawer (mobile) ─────────────────────────── */}
+      {showQuickAdd && <QuickAddDrawer onClose={() => setShowQuickAdd(false)} />}
 
       {/* ── More drawer (mobile) ──────────────────────────────── */}
       {showMore && (
         <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowMore(false)} />
-
-          {/* Drawer */}
           <div className="relative bg-white rounded-t-2xl p-5 space-y-1">
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-
-            {moreItems.map(({ to, label, icon }) => (
-              <NavLink key={to} to={to}
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 mb-2">Pages</p>
+            {navItems.map(({ to, label, icon, end }) => (
+              <NavLink key={to} to={to} end={end}
                 onClick={() => setShowMore(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
@@ -111,7 +229,6 @@ export default function Layout({ session }) {
                 <span className="text-xl">{icon}</span>{label}
               </NavLink>
             ))}
-
             <div className="border-t border-gray-100 pt-2 mt-2 space-y-1">
               <button onClick={() => { setDark(d => !d); setShowMore(false) }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
