@@ -6,10 +6,57 @@ import {
 import { supabase } from '../lib/supabase'
 
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 function fmt(n) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n || 0)
+}
+
+// --- Pay-period helpers (mirrors Dashboard.jsx) ---
+function getActualPayday(year, month) {
+  const d = new Date(year, month - 1, 28)
+  const dow = d.getDay()
+  if (dow === 6) d.setDate(27) // Saturday → Friday
+  if (dow === 0) d.setDate(26) // Sunday → Friday
+  return d
+}
+
+function dateStr(d) {
+  return d.toISOString().split('T')[0]
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+// 12 pay periods for a given year (Jan payday → Dec payday)
+function getYearPeriods(year) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1
+    const start = getActualPayday(year, m)
+    const nextM = m === 12 ? 1 : m + 1
+    const nextY = m === 12 ? year + 1 : year
+    const end = getActualPayday(nextY, nextM) // exclusive
+    return { m, start, end, label: MONTH_ABBR[i] }
+  })
+}
+
+// Last N pay periods ending on or before today
+function getRecentPeriods(n) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const y = today.getFullYear(), mo = today.getMonth() + 1
+  const thisPayday = getActualPayday(y, mo)
+  // current period start
+  let cur = today >= thisPayday ? { y, m: mo } : { y: mo === 1 ? y - 1 : y, m: mo === 1 ? 12 : mo - 1 }
+  const periods = []
+  for (let i = 0; i < n; i++) {
+    const start = getActualPayday(cur.y, cur.m)
+    const nextM = cur.m === 12 ? 1 : cur.m + 1
+    const nextY = cur.m === 12 ? cur.y + 1 : cur.y
+    const end = getActualPayday(nextY, nextM)
+    periods.unshift({ start, end, label: `${fmtDate(start)}` })
+    cur = { y: cur.m === 1 ? cur.y - 1 : cur.y, m: cur.m === 1 ? 12 : cur.m - 1 }
+  }
+  return periods
 }
 
 const BAR_TOOLTIP = ({ active, payload, label }) => {
@@ -28,10 +75,10 @@ export default function Analytics() {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [loading, setLoading] = useState(true)
-  const [annualData, setAnnualData] = useState([])   // per month: { month, income, spent, saved }
-  const [merchants, setMerchants] = useState([])      // [{ name, total, count }]
-  const [momData, setMomData] = useState([])          // month-over-month category table
-  const [momMonths, setMomMonths] = useState([])      // labels for last 3 months
+  const [annualData, setAnnualData] = useState([])
+  const [merchants, setMerchants] = useState([])
+  const [momData, setMomData] = useState([])
+  const [momLabels, setMomLabels] = useState([])
   const [totalIncome, setTotalIncome] = useState(0)
   const [totalSpent, setTotalSpent] = useState(0)
   const [bestMonth, setBestMonth] = useState(null)
@@ -41,53 +88,47 @@ export default function Analytics() {
 
   async function fetchAll() {
     setLoading(true)
-    const yearStart = `${year}-01-01`
-    const yearEnd = `${year}-12-31`
-
-    // Salary paid on 28th of prev month counts as month income — use same rule as Dashboard:
-    // income from 25 Dec prev year to 31 Dec this year
-    const incomeStart = `${year - 1}-12-25`
+    const periods = getYearPeriods(year)
+    const fetchStart = dateStr(periods[0].start)
+    // fetch up to the day before the 13th period starts (end of Dec period)
+    const fetchEnd = dateStr(new Date(periods[11].end.getTime() - 86400000))
 
     const [expensesRes, incomeRes] = await Promise.all([
-      supabase.from('expenses').select('date, amount, description, categories(name, color)').gte('date', yearStart).lte('date', yearEnd),
-      supabase.from('income_entries').select('date, amount').gte('date', incomeStart).lte('date', yearEnd),
+      supabase.from('expenses').select('date, amount, description, categories(name, color)')
+        .gte('date', fetchStart).lte('date', fetchEnd),
+      supabase.from('income_entries').select('date, amount')
+        .gte('date', fetchStart).lte('date', fetchEnd),
     ])
 
     const expenses = expensesRes.data || []
     const incomeEntries = incomeRes.data || []
 
-    // --- Annual monthly data ---
+    // Assign a transaction to its pay period index (0-11)
+    function periodIdx(dateString) {
+      const d = new Date(dateString + 'T12:00:00')
+      return periods.findIndex(p => d >= p.start && d < p.end)
+    }
+
     const monthlyIncome = Array(12).fill(0)
     const monthlySpent = Array(12).fill(0)
 
-    // Assign income to month (entries from 25th of prev month → assigned to next month)
     incomeEntries.forEach(e => {
-      const d = new Date(e.date + 'T12:00:00')
-      let m = d.getMonth() // 0-indexed
-      const day = d.getDate()
-      const entryYear = d.getFullYear()
-      // If from prev year (Dec 25-31) → assign to Jan (month 0)
-      if (entryYear < year) {
-        m = 0
-      } else if (day >= 25) {
-        // 25th+ of current month → assign to next month
-        m = m + 1
-        if (m > 11) return // overflow into next year, skip
-      }
-      if (m >= 0 && m <= 11) monthlyIncome[m] += Number(e.amount)
+      const idx = periodIdx(e.date)
+      if (idx !== -1) monthlyIncome[idx] += Number(e.amount)
     })
-
     expenses.forEach(e => {
-      const m = new Date(e.date + 'T12:00:00').getMonth()
-      monthlySpent[m] += Number(e.amount)
+      const idx = periodIdx(e.date)
+      if (idx !== -1) monthlySpent[idx] += Number(e.amount)
     })
 
-    const annual = MONTH_ABBR.map((label, i) => ({
-      month: label,
+    const annual = periods.map((p, i) => ({
+      month: p.label,
       income: Math.round(monthlyIncome[i] * 100) / 100,
       spent: Math.round(monthlySpent[i] * 100) / 100,
       saved: Math.round((monthlyIncome[i] - monthlySpent[i]) * 100) / 100,
-      savingsRate: monthlyIncome[i] > 0 ? Math.round(((monthlyIncome[i] - monthlySpent[i]) / monthlyIncome[i]) * 100) : 0,
+      savingsRate: monthlyIncome[i] > 0
+        ? Math.round(((monthlyIncome[i] - monthlySpent[i]) / monthlyIncome[i]) * 100)
+        : 0,
     }))
     setAnnualData(annual)
 
@@ -96,11 +137,13 @@ export default function Analytics() {
     setTotalIncome(ytdIncome)
     setTotalSpent(ytdSpent)
 
-    // Best/worst savings month (only months with income)
     const monthsWithIncome = annual.filter(m => m.income > 0)
     if (monthsWithIncome.length) {
       setBestMonth(monthsWithIncome.reduce((a, b) => a.saved > b.saved ? a : b))
       setWorstMonth(monthsWithIncome.reduce((a, b) => a.saved < b.saved ? a : b))
+    } else {
+      setBestMonth(null)
+      setWorstMonth(null)
     }
 
     // --- Top merchants ---
@@ -111,34 +154,28 @@ export default function Analytics() {
       merchantMap[key].total += Number(e.amount)
       merchantMap[key].count++
     })
-    const sorted = Object.values(merchantMap)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 15)
-    setMerchants(sorted)
+    setMerchants(Object.values(merchantMap).sort((a, b) => b.total - a.total).slice(0, 15))
 
-    // --- Month-over-month (last 3 months with data) ---
-    const currentMonth = now.getMonth() // 0-indexed
-    const last3 = []
-    for (let i = 2; i >= 0; i--) {
-      let m = currentMonth - i
-      let y = year
-      if (m < 0) { m += 12; y-- }
-      last3.push({ m, y, label: `${MONTH_ABBR[m]} ${y}` })
-    }
-    setMomMonths(last3.map(x => x.label))
+    // --- Period-over-period (last 3 pay periods) ---
+    const last3 = getRecentPeriods(3)
+    setMomLabels(last3.map(p => p.label))
 
-    // Build category→month map
+    // fetch expenses for the range covering last 3 periods
+    const momStart = dateStr(last3[0].start)
+    const momEnd = dateStr(new Date(last3[2].end.getTime() - 86400000))
+    const { data: momExpenses } = await supabase
+      .from('expenses').select('date, amount, categories(name, color)')
+      .gte('date', momStart).lte('date', momEnd)
+
     const catMap = {}
-    expenses.forEach(e => {
+    ;(momExpenses || []).forEach(e => {
       const d = new Date(e.date + 'T12:00:00')
-      const eMonth = d.getMonth()
-      const eYear = d.getFullYear()
-      const monthIdx = last3.findIndex(x => x.m === eMonth && x.y === eYear)
-      if (monthIdx === -1) return
+      const pIdx = last3.findIndex(p => d >= p.start && d < p.end)
+      if (pIdx === -1) return
       const catName = e.categories?.name || 'Uncategorised'
       const catColor = e.categories?.color || '#94a3b8'
       if (!catMap[catName]) catMap[catName] = { name: catName, color: catColor, totals: [0, 0, 0] }
-      catMap[catName].totals[monthIdx] += Number(e.amount)
+      catMap[catName].totals[pIdx] += Number(e.amount)
     })
     const momRows = Object.values(catMap)
       .map(c => ({ ...c, grandTotal: c.totals.reduce((s, v) => s + v, 0) }))
@@ -148,7 +185,8 @@ export default function Analytics() {
     setLoading(false)
   }
 
-  const avgSavingsRate = annualData.filter(m => m.income > 0).reduce((s, m, _, arr) => s + m.savingsRate / arr.length, 0)
+  const avgSavingsRate = annualData.filter(m => m.income > 0)
+    .reduce((s, m, _, arr) => s + m.savingsRate / arr.length, 0)
 
   return (
     <div>
@@ -184,7 +222,7 @@ export default function Analytics() {
           {/* Annual bar chart */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-1">Income vs Spending — {year}</h3>
-            <p className="text-xs text-gray-400 mb-4">Monthly overview for the full year</p>
+            <p className="text-xs text-gray-400 mb-4">Per pay period (payday to payday)</p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={annualData} barGap={2} barCategoryGap="30%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -202,7 +240,7 @@ export default function Analytics() {
           {/* Savings rate + best/worst */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-1">Savings Rate by Month</h3>
+              <h3 className="font-semibold text-gray-900 mb-1">Savings Rate by Period</h3>
               <p className="text-xs text-gray-400 mb-4">% of income saved (negative = overspent)</p>
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={annualData}>
@@ -217,18 +255,18 @@ export default function Analytics() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4 md:flex-col flex-row flex-wrap">
-              <h3 className="font-semibold text-gray-900 w-full">Highlights</h3>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4">
+              <h3 className="font-semibold text-gray-900">Highlights</h3>
               {bestMonth && (
                 <div className="bg-green-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-green-600 mb-0.5">Best month</p>
+                  <p className="text-xs font-medium text-green-600 mb-0.5">Best period</p>
                   <p className="text-sm font-bold text-green-800">{bestMonth.month}</p>
                   <p className="text-xs text-green-600 mt-0.5">Saved {fmt(bestMonth.saved)} ({bestMonth.savingsRate}%)</p>
                 </div>
               )}
               {worstMonth && (
                 <div className="bg-red-50 rounded-xl p-4">
-                  <p className="text-xs font-medium text-red-500 mb-0.5">Hardest month</p>
+                  <p className="text-xs font-medium text-red-500 mb-0.5">Hardest period</p>
                   <p className="text-sm font-bold text-red-700">{worstMonth.month}</p>
                   <p className="text-xs text-red-500 mt-0.5">
                     {worstMonth.saved >= 0 ? `Saved ${fmt(worstMonth.saved)}` : `Overspent by ${fmt(Math.abs(worstMonth.saved))}`}
@@ -238,10 +276,9 @@ export default function Analytics() {
             </div>
           </div>
 
-          {/* Top merchants + month-over-month */}
+          {/* Top merchants + period-over-period */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-            {/* Top merchants */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-1">Top Merchants</h3>
               <p className="text-xs text-gray-400 mb-4">Where your money goes in {year}</p>
@@ -273,10 +310,10 @@ export default function Analytics() {
               )}
             </div>
 
-            {/* Month-over-month category comparison */}
+            {/* Period-over-period category comparison */}
             <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 overflow-x-auto">
-              <h3 className="font-semibold text-gray-900 mb-1">Month-over-Month</h3>
-              <p className="text-xs text-gray-400 mb-4">Spending per category — last 3 months</p>
+              <h3 className="font-semibold text-gray-900 mb-1">Period-over-Period</h3>
+              <p className="text-xs text-gray-400 mb-4">Spending per category — last 3 pay periods</p>
               {momData.length === 0 ? (
                 <p className="text-xs text-gray-300 text-center py-6">No data</p>
               ) : (
@@ -284,7 +321,7 @@ export default function Analytics() {
                   <thead>
                     <tr className="border-b border-gray-100">
                       <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-4">Category</th>
-                      {momMonths.map(m => (
+                      {momLabels.map(m => (
                         <th key={m} className="text-right text-xs font-medium text-gray-400 pb-2 px-2">{m}</th>
                       ))}
                       <th className="text-right text-xs font-medium text-gray-400 pb-2 pl-2">Trend</th>
