@@ -66,7 +66,7 @@ function GaugeChart({ spent, income }) {
   const color = pct > 0.9 ? '#fca5a5' : pct > 0.7 ? '#fcd34d' : '#ffffff'
   return (
     <div className="flex flex-col items-center">
-      <svg viewBox="0 0 200 105" className="w-56">
+      <svg viewBox="0 0 200 105" className="w-full max-w-xs">
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="14"
           strokeDasharray={`${arc} ${circ}`} strokeLinecap="round"
           transform={`rotate(-180 ${cx} ${cy})`} />
@@ -75,12 +75,12 @@ function GaugeChart({ spent, income }) {
           transform={`rotate(-180 ${cx} ${cy})`}
           style={{ transition: 'stroke-dasharray 0.6s ease' }} />
         <text x={cx} y={cy - 4} textAnchor="middle"
-          style={{ fontSize: 22, fontWeight: 700, fill: '#ffffff' }}>{fmt(spent)}</text>
-        <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: 11, fill: 'rgba(255,255,255,0.6)' }}>
+          style={{ fontSize: 24, fontWeight: 700, fill: '#ffffff' }}>{fmt(spent)}</text>
+        <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: 12, fill: 'rgba(255,255,255,0.6)' }}>
           of {fmt(income)} income
         </text>
       </svg>
-      <p className="text-sm text-white/70 -mt-1">{Math.round(pct * 100)}% of income used</p>
+      <p className="text-sm text-white/70 -mt-2">{Math.round(pct * 100)}% of income used</p>
     </div>
   )
 }
@@ -324,22 +324,22 @@ export default function Dashboard() {
               {categoryData.length === 0 ? (
                 <div className="flex items-center justify-center h-36 text-white/40 text-sm">No data</div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <ResponsiveContainer width="55%" height={140}>
+                <div className="flex flex-col items-center gap-2">
+                  <ResponsiveContainer width="100%" height={190}>
                     <PieChart>
-                      <Pie data={categoryData} cx="50%" cy="50%" innerRadius={38} outerRadius={60}
+                      <Pie data={categoryData} cx="50%" cy="50%" innerRadius={58} outerRadius={88}
                         dataKey="value" paddingAngle={2}>
                         {categoryData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
                       <Tooltip content={<CUSTOM_TOOLTIP />} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex-1 space-y-1 overflow-hidden">
+                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 -mt-2">
                     {categoryData.slice(0, 6).map((c, i) => (
                       <div key={i} className="flex items-center gap-1.5 text-xs">
                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
-                        <span className="text-violet-100 truncate">{c.name}</span>
-                        <span className="ml-auto text-white font-medium flex-shrink-0">
+                        <span className="text-violet-100">{c.name}</span>
+                        <span className="text-white font-medium">
                           {spent > 0 ? Math.round((c.value / spent) * 100) : 0}%
                         </span>
                       </div>
@@ -354,7 +354,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {/* Category breakdown */}
-            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-fuchsia-600 to-purple-800 rounded-2xl p-6">
+            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-fuchsia-600 to-purple-800 rounded-2xl p-5 self-start">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-white">Category Breakdown</h3>
                 <Link to="/expenses" className="text-xs text-white underline">View all</Link>
@@ -371,24 +371,18 @@ export default function Dashboard() {
                     const barColor = overBudget ? '#fca5a5' : nearBudget ? '#fcd34d' : '#ffffff'
                     const barBg = `${spent > 0 ? Math.min((c.value / spent) * 100, 100) : 0}`
                     return (
-                      <div key={i} className={`rounded-2xl p-4 bg-white/10 border flex flex-col items-center text-center transition-colors ${overBudget ? 'border-red-300/60' : nearBudget ? 'border-amber-300/60' : 'border-white/10'}`}>
-                        {/* Emoji icon */}
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl mb-2 flex-shrink-0">
+                      <div key={i} className={`rounded-2xl p-3 bg-white/10 border flex flex-col items-center text-center transition-colors ${overBudget ? 'border-red-300/60' : nearBudget ? 'border-amber-300/60' : 'border-white/10'}`}>
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl mb-1.5 flex-shrink-0">
                           {getCategoryEmoji(c.name)}
                         </div>
                         <p className="text-xs font-semibold text-white/80 truncate w-full">{c.name}</p>
-                        {overBudget && <span className="text-xs font-bold text-red-300">Over budget!</span>}
-                        {nearBudget && <span className="text-xs font-bold text-amber-300">Near limit</span>}
-                        <p className="text-base font-bold text-white mt-1">{fmt(c.value)}</p>
-                        {hasBudget && (
-                          <p className="text-xs text-white/50">of {fmt(c.budget)}</p>
-                        )}
-                        <div className="w-full bg-white/20 rounded-full h-1.5 mt-2">
+                        {overBudget && <span className="text-xs font-bold text-red-300">Over!</span>}
+                        {nearBudget && <span className="text-xs font-bold text-amber-300">Near</span>}
+                        <p className="text-sm font-bold text-white mt-1">{fmt(c.value)}</p>
+                        {hasBudget && <p className="text-xs text-white/50">of {fmt(c.budget)}</p>}
+                        <div className="w-full bg-white/20 rounded-full h-1.5 mt-1.5">
                           <div className="h-1.5 rounded-full transition-all"
-                            style={{
-                              width: `${hasBudget ? budgetPct : Math.min(Number(barBg), 100)}%`,
-                              backgroundColor: barColor
-                            }} />
+                            style={{ width: `${hasBudget ? budgetPct : Math.min(Number(barBg), 100)}%`, backgroundColor: barColor }} />
                         </div>
                         <p className="text-xs text-white/50 mt-1">
                           {hasBudget ? `${Math.round(budgetPct)}%` : `${Math.round(Number(barBg))}% of total`}
