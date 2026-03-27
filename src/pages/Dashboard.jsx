@@ -85,6 +85,30 @@ function GaugeChart({ spent, income }) {
   )
 }
 
+function getCategoryEmoji(name) {
+  const n = (name || '').toLowerCase()
+  if (n.includes('grocer') || n.includes('supermarket') || n.includes('aldi') || n.includes('tesco') || n.includes('sainsbury') || n.includes('lidl') || n.includes('asda')) return '🛒'
+  if (n.includes('food') || n.includes('eat') || n.includes('restaurant') || n.includes('takeaway') || n.includes('cafe') || n.includes('coffee') || n.includes('dining')) return '🍽️'
+  if (n.includes('transport') || n.includes('fuel') || n.includes('petrol') || n.includes('car') || n.includes('bus') || n.includes('train') || n.includes('uber') || n.includes('taxi')) return '🚗'
+  if (n.includes('util') || n.includes('electric') || n.includes('gas') || n.includes('water') || n.includes('energy') || n.includes('power')) return '⚡'
+  if (n.includes('bill') || n.includes('phone') || n.includes('broadband') || n.includes('internet') || n.includes('mobile') || n.includes('subscript')) return '📋'
+  if (n.includes('health') || n.includes('medical') || n.includes('pharmacy') || n.includes('doctor') || n.includes('dental') || n.includes('nhs')) return '💊'
+  if (n.includes('fitness') || n.includes('gym') || n.includes('sport')) return '💪'
+  if (n.includes('saving') || n.includes('pension') || n.includes('invest')) return '💰'
+  if (n.includes('bank') || n.includes('transfer') || n.includes('payment')) return '🏦'
+  if (n.includes('shop') || n.includes('cloth') || n.includes('fashion') || n.includes('amazon') || n.includes('zara') || n.includes('primark')) return '🛍️'
+  if (n.includes('entertain') || n.includes('cinema') || n.includes('netflix') || n.includes('spotify') || n.includes('gaming') || n.includes('streaming')) return '🎬'
+  if (n.includes('education') || n.includes('school') || n.includes('course') || n.includes('book') || n.includes('tuition')) return '📚'
+  if (n.includes('holiday') || n.includes('travel') || n.includes('flight') || n.includes('hotel') || n.includes('airbnb')) return '✈️'
+  if (n.includes('insurance')) return '🛡️'
+  if (n.includes('home') || n.includes('house') || n.includes('rent') || n.includes('mortgage') || n.includes('furniture') || n.includes('garden')) return '🏠'
+  if (n.includes('personal') || n.includes('beauty') || n.includes('hair') || n.includes('salon')) return '💄'
+  if (n.includes('gift') || n.includes('donation') || n.includes('charity')) return '🎁'
+  if (n.includes('child') || n.includes('kids') || n.includes('baby')) return '👶'
+  if (n.includes('pet') || n.includes('vet') || n.includes('dog') || n.includes('cat')) return '🐾'
+  return '💳'
+}
+
 function daysUntil(dayOfMonth) {
   const today = new Date()
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
@@ -330,7 +354,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {/* Category breakdown */}
-            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-sky-500 to-blue-700 rounded-2xl p-6">
+            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-fuchsia-600 to-purple-800 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-white">Category Breakdown</h3>
                 <Link to="/expenses" className="text-xs text-white underline">View all</Link>
@@ -338,43 +362,37 @@ export default function Dashboard() {
               {categoryData.length === 0 ? (
                 <div className="text-center py-8 text-white/40 text-sm">No expenses this period</div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {categoryData.map((c, i) => {
                     const hasBudget = c.budget > 0
                     const budgetPct = hasBudget ? Math.min((c.value / c.budget) * 100, 100) : 0
                     const overBudget = hasBudget && c.value > c.budget
                     const nearBudget = hasBudget && !overBudget && budgetPct >= 80
-                    const barColor = overBudget ? '#fca5a5' : nearBudget ? '#fcd34d' : c.color
+                    const barColor = overBudget ? '#fca5a5' : nearBudget ? '#fcd34d' : '#ffffff'
+                    const barBg = `${spent > 0 ? Math.min((c.value / spent) * 100, 100) : 0}`
                     return (
-                      <div key={i} className={`rounded-xl p-4 bg-white/10 border transition-colors ${overBudget ? 'border-red-300/50' : nearBudget ? 'border-amber-300/50' : 'border-white/10'}`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />
-                          <span className="text-sm font-medium text-white truncate">{c.name}</span>
-                          {overBudget && <span className="ml-auto text-xs font-bold text-red-300">Over budget!</span>}
-                          {nearBudget && <span className="ml-auto text-xs font-bold text-amber-300">Near limit</span>}
+                      <div key={i} className={`rounded-2xl p-4 bg-white/10 border flex flex-col items-center text-center transition-colors ${overBudget ? 'border-red-300/60' : nearBudget ? 'border-amber-300/60' : 'border-white/10'}`}>
+                        {/* Emoji icon */}
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl mb-2 flex-shrink-0">
+                          {getCategoryEmoji(c.name)}
                         </div>
-                        <p className="text-lg font-bold text-white">{fmt(c.value)}</p>
-                        {hasBudget ? (
-                          <>
-                            <div className="w-full bg-white/20 rounded-full h-1.5 mt-2">
-                              <div className="h-1.5 rounded-full transition-all"
-                                style={{ width: `${budgetPct}%`, backgroundColor: barColor }} />
-                            </div>
-                            <p className="text-xs text-white/60 mt-1">
-                              {fmt(c.value)} of {fmt(c.budget)} budget · {Math.round(budgetPct)}%
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-full bg-white/20 rounded-full h-1.5 mt-2">
-                              <div className="h-1.5 rounded-full transition-all"
-                                style={{ width: `${spent > 0 ? Math.min((c.value / spent) * 100, 100) : 0}%`, backgroundColor: c.color }} />
-                            </div>
-                            <p className="text-xs text-white/60 mt-1">
-                              {spent > 0 ? Math.round((c.value / spent) * 100) : 0}% of total
-                            </p>
-                          </>
+                        <p className="text-xs font-semibold text-white/80 truncate w-full">{c.name}</p>
+                        {overBudget && <span className="text-xs font-bold text-red-300">Over budget!</span>}
+                        {nearBudget && <span className="text-xs font-bold text-amber-300">Near limit</span>}
+                        <p className="text-base font-bold text-white mt-1">{fmt(c.value)}</p>
+                        {hasBudget && (
+                          <p className="text-xs text-white/50">of {fmt(c.budget)}</p>
                         )}
+                        <div className="w-full bg-white/20 rounded-full h-1.5 mt-2">
+                          <div className="h-1.5 rounded-full transition-all"
+                            style={{
+                              width: `${hasBudget ? budgetPct : Math.min(Number(barBg), 100)}%`,
+                              backgroundColor: barColor
+                            }} />
+                        </div>
+                        <p className="text-xs text-white/50 mt-1">
+                          {hasBudget ? `${Math.round(budgetPct)}%` : `${Math.round(Number(barBg))}% of total`}
+                        </p>
                       </div>
                     )
                   })}
@@ -386,37 +404,49 @@ export default function Dashboard() {
             <div className="col-span-1 flex flex-col gap-5">
 
               {/* Upcoming payments */}
-              <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5">
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-800 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-white">Upcoming Payments</h3>
                   <Link to="/recurring" className="text-xs text-white underline">Manage</Link>
                 </div>
                 {upcoming.length === 0 ? (
-                  <div className="text-center py-5 text-white/60">
+                  <div className="text-center py-5">
                     <p className="text-2xl mb-2">📅</p>
                     <p className="text-xs font-medium text-white">No payments due in 14 days</p>
                     <p className="text-xs text-white/50 mt-1">Import a statement to auto-detect DDs & SOs</p>
                     <Link to="/recurring" className="text-xs text-white underline mt-2 inline-block">+ Add manually</Link>
                   </div>
                 ) : (
-                  <div className="space-y-2.5">
-                    {upcoming.map(r => (
-                      <div key={r.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${r.type === 'DD' ? 'bg-white/20 text-white' : 'bg-white/20 text-white'}`}>
-                            {r.type}
+                  <div className="space-y-2">
+                    {upcoming.map(r => {
+                      const urgencyPct = Math.max(Math.round(((14 - r.days) / 14) * 100), 6)
+                      const barColor = r.days === 0 ? '#fca5a5' : r.days <= 3 ? '#fcd34d' : '#ffffff'
+                      const icon = r.type === 'DD' ? '🏦' : '🔄'
+                      return (
+                        <div key={r.id} className="bg-white/10 rounded-xl p-3 border border-white/10">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg flex-shrink-0">
+                                {icon}
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-white leading-tight truncate max-w-28">{r.name}</p>
+                                <p className="text-xs text-white/60">
+                                  {r.due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                                  {' · '}{r.days === 0 ? 'Today!' : r.days === 1 ? 'Tomorrow' : `${r.days} days`}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-bold text-white flex-shrink-0">{fmt(r.amount)}</span>
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-white leading-tight">{r.name}</p>
-                            <p className="text-xs text-white/60">
-                              {r.due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                              {' · '}{r.days === 0 ? 'Today' : r.days === 1 ? 'Tomorrow' : `${r.days} days`}
-                            </p>
+                          {/* Urgency bar — fuller = sooner */}
+                          <div className="w-full bg-white/20 rounded-full h-1.5">
+                            <div className="h-1.5 rounded-full transition-all"
+                              style={{ width: `${urgencyPct}%`, backgroundColor: barColor }} />
                           </div>
                         </div>
-                        <span className="text-xs font-semibold text-white">{fmt(r.amount)}</span>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
