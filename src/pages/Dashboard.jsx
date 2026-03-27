@@ -63,11 +63,11 @@ function GaugeChart({ spent, income }) {
   const arc = circ / 2
   const pct = income > 0 ? Math.min(spent / income, 1) : 0
   const filled = pct * arc
-  const color = pct > 0.9 ? '#ef4444' : pct > 0.7 ? '#f59e0b' : '#3b82f6'
+  const color = pct > 0.9 ? '#fca5a5' : pct > 0.7 ? '#fcd34d' : '#ffffff'
   return (
     <div className="flex flex-col items-center">
       <svg viewBox="0 0 200 105" className="w-56">
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e5e7eb" strokeWidth="14"
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="14"
           strokeDasharray={`${arc} ${circ}`} strokeLinecap="round"
           transform={`rotate(-180 ${cx} ${cy})`} />
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="14"
@@ -75,13 +75,12 @@ function GaugeChart({ spent, income }) {
           transform={`rotate(-180 ${cx} ${cy})`}
           style={{ transition: 'stroke-dasharray 0.6s ease' }} />
         <text x={cx} y={cy - 4} textAnchor="middle"
-          style={{ fontSize: 22, fontWeight: 700, fill: 'currentColor' }}
-          className="text-gray-900">{fmt(spent)}</text>
-        <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: 11, fill: '#9ca3af' }}>
+          style={{ fontSize: 22, fontWeight: 700, fill: '#ffffff' }}>{fmt(spent)}</text>
+        <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: 11, fill: 'rgba(255,255,255,0.6)' }}>
           of {fmt(income)} income
         </text>
       </svg>
-      <p className="text-sm text-gray-500 -mt-1">{Math.round(pct * 100)}% of income used</p>
+      <p className="text-sm text-white/70 -mt-1">{Math.round(pct * 100)}% of income used</p>
     </div>
   )
 }
@@ -283,23 +282,23 @@ export default function Dashboard() {
             </div>
 
             {/* Gauge */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col items-center justify-center">
-              <h3 className="font-semibold text-gray-900 mb-1">Income Utilisation</h3>
-              <p className="text-xs text-gray-400 mb-3">{periodLabel}</p>
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-6 flex flex-col items-center justify-center">
+              <h3 className="font-semibold text-white mb-1">Income Utilisation</h3>
+              <p className="text-xs text-emerald-200 mb-3">{periodLabel}</p>
               <GaugeChart spent={spent} income={income} />
               {income === 0 && (
-                <Link to="/income" className="text-xs text-indigo-600 hover:underline mt-2">
+                <Link to="/income" className="text-xs text-white underline mt-2">
                   + Add your income to see gauge
                 </Link>
               )}
             </div>
 
             {/* Donut chart */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-1">Expense Distribution</h3>
-              <p className="text-xs text-gray-400 mb-3">{periodLabel}</p>
+            <div className="bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl p-6">
+              <h3 className="font-semibold text-white mb-1">Expense Distribution</h3>
+              <p className="text-xs text-violet-200 mb-3">{periodLabel}</p>
               {categoryData.length === 0 ? (
-                <div className="flex items-center justify-center h-36 text-gray-300 text-sm">No data</div>
+                <div className="flex items-center justify-center h-36 text-white/40 text-sm">No data</div>
               ) : (
                 <div className="flex items-center gap-2">
                   <ResponsiveContainer width="55%" height={140}>
@@ -315,8 +314,8 @@ export default function Dashboard() {
                     {categoryData.slice(0, 6).map((c, i) => (
                       <div key={i} className="flex items-center gap-1.5 text-xs">
                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
-                        <span className="text-gray-600 truncate">{c.name}</span>
-                        <span className="ml-auto text-gray-800 font-medium flex-shrink-0">
+                        <span className="text-violet-100 truncate">{c.name}</span>
+                        <span className="ml-auto text-white font-medium flex-shrink-0">
                           {spent > 0 ? Math.round((c.value / spent) * 100) : 0}%
                         </span>
                       </div>
@@ -331,13 +330,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {/* Category breakdown */}
-            <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-sky-500 to-blue-700 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Category Breakdown</h3>
-                <Link to="/expenses" className="text-xs text-indigo-600 hover:underline">View all</Link>
+                <h3 className="font-semibold text-white">Category Breakdown</h3>
+                <Link to="/expenses" className="text-xs text-white underline">View all</Link>
               </div>
               {categoryData.length === 0 ? (
-                <div className="text-center py-8 text-gray-300 text-sm">No expenses this period</div>
+                <div className="text-center py-8 text-white/40 text-sm">No expenses this period</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {categoryData.map((c, i) => {
@@ -345,33 +344,33 @@ export default function Dashboard() {
                     const budgetPct = hasBudget ? Math.min((c.value / c.budget) * 100, 100) : 0
                     const overBudget = hasBudget && c.value > c.budget
                     const nearBudget = hasBudget && !overBudget && budgetPct >= 80
-                    const barColor = overBudget ? '#ef4444' : nearBudget ? '#f59e0b' : c.color
+                    const barColor = overBudget ? '#fca5a5' : nearBudget ? '#fcd34d' : c.color
                     return (
-                      <div key={i} className={`border rounded-xl p-4 hover:bg-gray-50 transition-colors ${overBudget ? 'border-red-200 bg-red-50/30' : nearBudget ? 'border-amber-200' : 'border-gray-100'}`}>
+                      <div key={i} className={`rounded-xl p-4 bg-white/10 border transition-colors ${overBudget ? 'border-red-300/50' : nearBudget ? 'border-amber-300/50' : 'border-white/10'}`}>
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />
-                          <span className="text-sm font-medium text-gray-700 truncate">{c.name}</span>
-                          {overBudget && <span className="ml-auto text-xs font-bold text-red-500">Over budget!</span>}
-                          {nearBudget && <span className="ml-auto text-xs font-bold text-amber-500">Near limit</span>}
+                          <span className="text-sm font-medium text-white truncate">{c.name}</span>
+                          {overBudget && <span className="ml-auto text-xs font-bold text-red-300">Over budget!</span>}
+                          {nearBudget && <span className="ml-auto text-xs font-bold text-amber-300">Near limit</span>}
                         </div>
-                        <p className="text-lg font-bold text-gray-900">{fmt(c.value)}</p>
+                        <p className="text-lg font-bold text-white">{fmt(c.value)}</p>
                         {hasBudget ? (
                           <>
-                            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+                            <div className="w-full bg-white/20 rounded-full h-1.5 mt-2">
                               <div className="h-1.5 rounded-full transition-all"
                                 style={{ width: `${budgetPct}%`, backgroundColor: barColor }} />
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-white/60 mt-1">
                               {fmt(c.value)} of {fmt(c.budget)} budget · {Math.round(budgetPct)}%
                             </p>
                           </>
                         ) : (
                           <>
-                            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
+                            <div className="w-full bg-white/20 rounded-full h-1.5 mt-2">
                               <div className="h-1.5 rounded-full transition-all"
                                 style={{ width: `${spent > 0 ? Math.min((c.value / spent) * 100, 100) : 0}%`, backgroundColor: c.color }} />
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-white/60 mt-1">
                               {spent > 0 ? Math.round((c.value / spent) * 100) : 0}% of total
                             </p>
                           </>
@@ -387,35 +386,35 @@ export default function Dashboard() {
             <div className="col-span-1 flex flex-col gap-5">
 
               {/* Upcoming payments */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900">Upcoming Payments</h3>
-                  <Link to="/recurring" className="text-xs text-indigo-600 hover:underline">Manage</Link>
+                  <h3 className="font-semibold text-white">Upcoming Payments</h3>
+                  <Link to="/recurring" className="text-xs text-white underline">Manage</Link>
                 </div>
                 {upcoming.length === 0 ? (
-                  <div className="text-center py-5 text-gray-400">
+                  <div className="text-center py-5 text-white/60">
                     <p className="text-2xl mb-2">📅</p>
-                    <p className="text-xs font-medium">No payments due in 14 days</p>
-                    <p className="text-xs text-gray-300 mt-1">Import a statement to auto-detect DDs & SOs</p>
-                    <Link to="/recurring" className="text-xs text-indigo-500 hover:underline mt-2 inline-block">+ Add manually</Link>
+                    <p className="text-xs font-medium text-white">No payments due in 14 days</p>
+                    <p className="text-xs text-white/50 mt-1">Import a statement to auto-detect DDs & SOs</p>
+                    <Link to="/recurring" className="text-xs text-white underline mt-2 inline-block">+ Add manually</Link>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
                     {upcoming.map(r => (
                       <div key={r.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${r.type === 'DD' ? 'bg-red-400' : 'bg-amber-400'}`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${r.type === 'DD' ? 'bg-white/20 text-white' : 'bg-white/20 text-white'}`}>
                             {r.type}
                           </div>
                           <div>
-                            <p className="text-xs font-medium text-gray-800 leading-tight">{r.name}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs font-medium text-white leading-tight">{r.name}</p>
+                            <p className="text-xs text-white/60">
                               {r.due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                               {' · '}{r.days === 0 ? 'Today' : r.days === 1 ? 'Tomorrow' : `${r.days} days`}
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs font-semibold text-gray-800">{fmt(r.amount)}</span>
+                        <span className="text-xs font-semibold text-white">{fmt(r.amount)}</span>
                       </div>
                     ))}
                   </div>
@@ -423,13 +422,13 @@ export default function Dashboard() {
               </div>
 
               {/* Recent transactions */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="bg-gradient-to-br from-rose-500 to-pink-700 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900">Recent</h3>
-                  <Link to="/expenses" className="text-xs text-indigo-600 hover:underline">View all</Link>
+                  <h3 className="font-semibold text-white">Recent</h3>
+                  <Link to="/expenses" className="text-xs text-white underline">View all</Link>
                 </div>
                 {recentExpenses.length === 0 ? (
-                  <div className="text-center py-4 text-gray-300 text-xs">No transactions this period</div>
+                  <div className="text-center py-4 text-white/40 text-xs">No transactions this period</div>
                 ) : (
                   <div className="space-y-2">
                     {recentExpenses.map((e, i) => (
@@ -438,15 +437,15 @@ export default function Dashboard() {
                           <div className="w-2 h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: e.categories?.color || '#94a3b8' }} />
                           <div className="min-w-0">
-                            <p className="text-xs font-medium text-gray-800 leading-tight truncate max-w-36">
+                            <p className="text-xs font-medium text-white leading-tight truncate max-w-36">
                               {e.description || '—'}
                             </p>
-                            <p className="text-xs text-gray-400 truncate">
+                            <p className="text-xs text-white/60 truncate">
                               {e.categories?.name || 'Uncategorised'} · {new Date(e.date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs font-semibold text-gray-800 ml-2 flex-shrink-0">{fmt(e.amount)}</span>
+                        <span className="text-xs font-semibold text-white ml-2 flex-shrink-0">{fmt(e.amount)}</span>
                       </div>
                     ))}
                   </div>
