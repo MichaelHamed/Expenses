@@ -3,10 +3,16 @@ import { Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from '../lib/supabase'
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
-
 function fmt(n) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n || 0)
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+function dateStr(d) {
+  return d.toISOString().split('T')[0]
 }
 
 function getGreeting() {
@@ -16,7 +22,41 @@ function getGreeting() {
   return 'Good Evening'
 }
 
-// SVG semi-circle gauge — text color from CSS variable so it works in dark mode
+// Returns the actual payday Date for a given year/month.
+// Normally the 28th; if Saturday → Friday 27th; if Sunday → Friday 26th.
+function getActualPayday(year, month) {
+  const d = new Date(year, month - 1, 28)
+  const dow = d.getDay()
+  if (dow === 6) d.setDate(27) // Saturday → Friday
+  if (dow === 0) d.setDate(26) // Sunday → Friday
+  return d
+}
+
+function nextPeriodStart(d) {
+  const m = d.getMonth() + 2 // next month, 1-indexed
+  const y = m > 12 ? d.getFullYear() + 1 : d.getFullYear()
+  return getActualPayday(y, m > 12 ? 1 : m)
+}
+
+function prevPeriodStart(d) {
+  const m = d.getMonth() // 0-indexed = previous month 1-indexed
+  const y = m === 0 ? d.getFullYear() - 1 : d.getFullYear()
+  return getActualPayday(y, m === 0 ? 12 : m)
+}
+
+function getCurrentPeriodStart() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const y = today.getFullYear()
+  const m = today.getMonth() + 1
+  const thisPayday = getActualPayday(y, m)
+  if (today >= thisPayday) return thisPayday
+  const prevM = m === 1 ? 12 : m - 1
+  const prevY = m === 1 ? y - 1 : y
+  return getActualPayday(prevY, prevM)
+}
+
+// SVG semi-circle gauge
 function GaugeChart({ spent, income }) {
   const r = 75, cx = 100, cy = 95
   const circ = 2 * Math.PI * r
@@ -24,7 +64,6 @@ function GaugeChart({ spent, income }) {
   const pct = income > 0 ? Math.min(spent / income, 1) : 0
   const filled = pct * arc
   const color = pct > 0.9 ? '#ef4444' : pct > 0.7 ? '#f59e0b' : '#3b82f6'
-
   return (
     <div className="flex flex-col items-center">
       <svg viewBox="0 0 200 105" className="w-56">
@@ -37,16 +76,12 @@ function GaugeChart({ spent, income }) {
           style={{ transition: 'stroke-dasharray 0.6s ease' }} />
         <text x={cx} y={cy - 4} textAnchor="middle"
           style={{ fontSize: 22, fontWeight: 700, fill: 'currentColor' }}
-          className="text-gray-900">
-          {fmt(spent)}
-        </text>
+          className="text-gray-900">{fmt(spent)}</text>
         <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: 11, fill: '#9ca3af' }}>
           of {fmt(income)} income
         </text>
       </svg>
-      <p className="text-sm text-gray-500 -mt-1">
-        {Math.round(pct * 100)}% of income used
-      </p>
+      <p className="text-sm text-gray-500 -mt-1">{Math.round(pct * 100)}% of income used</p>
     </div>
   )
 }
@@ -64,9 +99,7 @@ function daysUntil(dayOfMonth) {
 function nextDueDate(dayOfMonth) {
   const today = new Date()
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
-  if (thisMonth <= today) {
-    return new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
-  }
+  if (thisMonth <= today) return new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
   return thisMonth
 }
 
@@ -84,22 +117,20 @@ const CUSTOM_TOOLTIP = ({ active, payload }) => {
 
 export default function Dashboard() {
   const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1)
+  const currentPeriodStart = getCurrentPeriodStart()
+
+  const [periodStart, setPeriodStart] = useState(currentPeriodStart)
   const [income, setIncome] = useState(0)
   const [spent, setSpent] = useState(0)
-  const [lastMonthSpent, setLastMonthSpent] = useState(0)
+  const [prevSpent, setPrevSpent] = useState(0)
   const [categoryData, setCategoryData] = useState([])
   const [recentExpenses, setRecentExpenses] = useState([])
   const [upcoming, setUpcoming] = useState([])
-  const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserEmail(user?.email || '')
-      // Microsoft SSO provides full_name or name in user_metadata
       const meta = user?.user_metadata || {}
       const fullName = meta.full_name || meta.name || ''
       const firstName = fullName.trim().split(' ')[0]
@@ -108,35 +139,34 @@ export default function Dashboard() {
     })
   }, [])
 
-  useEffect(() => { fetchAll() }, [year, month])
+  useEffect(() => { fetchAll() }, [periodStart])
+
+  const periodEnd = nextPeriodStart(periodStart)
+  const isCurrentPeriod = periodStart.getTime() === currentPeriodStart.getTime()
 
   async function fetchAll() {
     setLoading(true)
-    const start = `${year}-${String(month).padStart(2, '0')}-01`
-    const end = new Date(year, month, 0).toISOString().split('T')[0]
+    const start = dateStr(periodStart)
+    const end = dateStr(new Date(periodEnd.getTime() - 86400000)) // day before periodEnd
 
-    // Income: salary paid on 28th of previous month — look back to the 25th
-    const prevMonth = month === 1 ? 12 : month - 1
-    const prevYear = month === 1 ? year - 1 : year
-    const incomeStart = `${prevYear}-${String(prevMonth).padStart(2, '0')}-25`
+    // Previous period for comparison
+    const prevStart = dateStr(prevPeriodStart(periodStart))
+    const prevEnd = dateStr(new Date(periodStart.getTime() - 86400000))
 
-    // Last month date range (for vs-last-month comparison)
-    const lmMonth = prevMonth
-    const lmYear = prevYear
-    const lmStart = `${lmYear}-${String(lmMonth).padStart(2, '0')}-01`
-    const lmEnd = new Date(lmYear, lmMonth, 0).toISOString().split('T')[0]
-
-    const [incomeRes, expensesRes, recurringRes, lastMonthRes] = await Promise.all([
-      supabase.from('income_entries').select('amount').gte('date', incomeStart).lte('date', end),
-      supabase.from('expenses').select('amount, description, date, categories(name, color, budget)').gte('date', start).lte('date', end).order('date', { ascending: false }),
+    const [incomeRes, expensesRes, recurringRes, prevRes] = await Promise.all([
+      supabase.from('income_entries').select('amount').gte('date', start).lte('date', end),
+      supabase.from('expenses')
+        .select('amount, description, date, categories(name, color, budget)')
+        .gte('date', start).lte('date', end)
+        .order('date', { ascending: false }),
       supabase.from('recurring_payments').select('*, categories(name, color)').eq('is_active', true).order('day_of_month'),
-      supabase.from('expenses').select('amount').gte('date', lmStart).lte('date', lmEnd),
+      supabase.from('expenses').select('amount').gte('date', prevStart).lte('date', prevEnd),
     ])
 
     const totalIncome = (incomeRes.data || []).reduce((s, r) => s + Number(r.amount), 0)
     const allExpenses = expensesRes.data || []
     const totalSpent = allExpenses.reduce((s, r) => s + Number(r.amount), 0)
-    const totalLastMonth = (lastMonthRes.data || []).reduce((s, r) => s + Number(r.amount), 0)
+    const totalPrevSpent = (prevRes.data || []).reduce((s, r) => s + Number(r.amount), 0)
 
     const catMap = {}
     allExpenses.forEach(e => {
@@ -146,7 +176,6 @@ export default function Dashboard() {
       if (!catMap[name]) catMap[name] = { name, color, budget, value: 0 }
       catMap[name].value += Number(e.amount)
     })
-    const cats = Object.values(catMap).sort((a, b) => b.value - a.value)
 
     const upcomingItems = (recurringRes.data || [])
       .map(r => ({ ...r, days: daysUntil(r.day_of_month), due: nextDueDate(r.day_of_month) }))
@@ -155,43 +184,44 @@ export default function Dashboard() {
 
     setIncome(totalIncome)
     setSpent(totalSpent)
-    setLastMonthSpent(totalLastMonth)
-    setCategoryData(cats)
+    setPrevSpent(totalPrevSpent)
+    setCategoryData(Object.values(catMap).sort((a, b) => b.value - a.value))
     setRecentExpenses(allExpenses.slice(0, 8))
     setUpcoming(upcomingItems)
     setLoading(false)
   }
 
-  const isCurrentMonth = now.getMonth() + 1 === month && now.getFullYear() === year
+  // Period progress
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const totalDays = Math.round((periodEnd - periodStart) / 86400000)
+  const daysPassed = Math.min(Math.round((today - periodStart) / 86400000), totalDays)
+  const daysLeft = Math.max(Math.round((periodEnd - today) / 86400000), 0)
+  const periodPct = Math.round((daysPassed / totalDays) * 100)
+
   const remaining = income - spent
-  const daysInMonth = new Date(year, month, 0).getDate()
-  const dayOfMonth = isCurrentMonth ? now.getDate() : daysInMonth
-  const daysLeft = isCurrentMonth ? daysInMonth - now.getDate() : 0
-  const monthPct = Math.round((dayOfMonth / daysInMonth) * 100)
-  const dailyAllowance = daysLeft > 0 && remaining > 0 ? remaining / daysLeft : null
+  const dailyAllowance = isCurrentPeriod && daysLeft > 0 && remaining > 0 ? remaining / daysLeft : null
 
-  // vs last month
-  const vsLastMonth = lastMonthSpent > 0 ? ((spent - lastMonthSpent) / lastMonthSpent) * 100 : null
-  const vsLabel = vsLastMonth === null ? null
-    : vsLastMonth > 0 ? `+${Math.round(vsLastMonth)}% vs last month`
-    : `${Math.round(vsLastMonth)}% vs last month`
-  const vsColor = vsLastMonth === null ? '' : vsLastMonth > 0 ? 'text-red-300' : 'text-green-300'
+  const vsLabel = prevSpent > 0
+    ? (spent > prevSpent ? `+${Math.round(((spent - prevSpent) / prevSpent) * 100)}% vs prev period`
+      : `${Math.round(((spent - prevSpent) / prevSpent) * 100)}% vs prev period`)
+    : null
+  const vsColor = prevSpent > 0 && spent > prevSpent ? 'text-red-300' : 'text-green-300'
 
+  const periodLabel = `${fmtDate(periodStart)} → ${fmtDate(periodEnd)}`
 
   return (
     <div>
-      {/* Month selector */}
+      {/* Pay period navigation */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-        <div className="flex items-center gap-2">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-          </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-1 py-1">
+          <button onClick={() => setPeriodStart(prevPeriodStart(periodStart))}
+            className="px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors">‹</button>
+          <span className="text-xs font-medium text-gray-700 px-2 whitespace-nowrap">{periodLabel}</span>
+          <button
+            onClick={() => { if (!isCurrentPeriod) setPeriodStart(nextPeriodStart(periodStart)) }}
+            disabled={isCurrentPeriod}
+            className="px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
         </div>
       </div>
 
@@ -211,18 +241,19 @@ export default function Dashboard() {
               </div>
               <div className="mt-4">
                 <div className="flex justify-between text-xs text-indigo-200 mb-1">
-                  <span>Month progress</span>
-                  <span>{monthPct}% · {daysLeft > 0 ? `${daysLeft} days left` : 'month complete'}</span>
+                  <span>Pay period progress</span>
+                  <span>{isCurrentPeriod ? `${periodPct}% · ${daysLeft}d left` : `${fmtDate(periodStart)} – ${fmtDate(periodEnd)}`}</span>
                 </div>
                 <div className="w-full bg-indigo-400/40 rounded-full h-2">
-                  <div className="bg-white h-2 rounded-full transition-all" style={{ width: `${monthPct}%` }} />
+                  <div className="bg-white h-2 rounded-full transition-all"
+                    style={{ width: `${isCurrentPeriod ? periodPct : 100}%` }} />
                 </div>
-                {/* 2×2 stats grid */}
+                {/* 2×2 stats */}
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <div className="bg-white/10 rounded-xl p-3">
                     <p className="text-xs text-indigo-200">Income</p>
                     <p className="text-sm font-bold mt-0.5">{fmt(income)}</p>
-                    <p className="text-xs text-indigo-300 mt-0.5">incl. 28th prior mo.</p>
+                    <p className="text-xs text-indigo-300 mt-0.5">paid {fmtDate(periodStart)}</p>
                   </div>
                   <div className="bg-white/10 rounded-xl p-3">
                     <p className="text-xs text-indigo-200">Spent</p>
@@ -232,7 +263,7 @@ export default function Dashboard() {
                   <div className="bg-white/10 rounded-xl p-3">
                     <p className="text-xs text-indigo-200">Remaining</p>
                     <p className={`text-sm font-bold mt-0.5 ${remaining < 0 ? 'text-red-300' : ''}`}>{fmt(remaining)}</p>
-                    <p className="text-xs text-indigo-300 mt-0.5">{Math.round((1 - spent / income) * 100)}% of income</p>
+                    {income > 0 && <p className="text-xs text-indigo-300 mt-0.5">{Math.round((1 - spent / income) * 100)}% of income</p>}
                   </div>
                   <div className={`rounded-xl p-3 ${dailyAllowance !== null && dailyAllowance < 20 ? 'bg-red-500/30' : 'bg-white/10'}`}>
                     <p className="text-xs text-indigo-200">Daily budget</p>
@@ -241,7 +272,7 @@ export default function Dashboard() {
                         <p className={`text-sm font-bold mt-0.5 ${dailyAllowance < 20 ? 'text-red-300' : ''}`}>
                           {fmt(dailyAllowance)}/day
                         </p>
-                        <p className="text-xs text-indigo-300 mt-0.5">for {daysLeft} days</p>
+                        <p className="text-xs text-indigo-300 mt-0.5">{daysLeft}d until {fmtDate(periodEnd)}</p>
                       </>
                     ) : (
                       <p className="text-sm font-bold mt-0.5 text-indigo-300">—</p>
@@ -254,7 +285,7 @@ export default function Dashboard() {
             {/* Gauge */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col items-center justify-center">
               <h3 className="font-semibold text-gray-900 mb-1">Income Utilisation</h3>
-              <p className="text-xs text-gray-400 mb-3">{MONTHS[month-1]} {year}</p>
+              <p className="text-xs text-gray-400 mb-3">{periodLabel}</p>
               <GaugeChart spent={spent} income={income} />
               {income === 0 && (
                 <Link to="/income" className="text-xs text-indigo-600 hover:underline mt-2">
@@ -266,7 +297,7 @@ export default function Dashboard() {
             {/* Donut chart */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-1">Expense Distribution</h3>
-              <p className="text-xs text-gray-400 mb-3">{MONTHS[month-1]} {year}</p>
+              <p className="text-xs text-gray-400 mb-3">{periodLabel}</p>
               {categoryData.length === 0 ? (
                 <div className="flex items-center justify-center h-36 text-gray-300 text-sm">No data</div>
               ) : (
@@ -275,9 +306,7 @@ export default function Dashboard() {
                     <PieChart>
                       <Pie data={categoryData} cx="50%" cy="50%" innerRadius={38} outerRadius={60}
                         dataKey="value" paddingAngle={2}>
-                        {categoryData.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} />
-                        ))}
+                        {categoryData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
                       <Tooltip content={<CUSTOM_TOOLTIP />} />
                     </PieChart>
@@ -301,14 +330,14 @@ export default function Dashboard() {
           {/* BOTTOM ROW */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-            {/* Category breakdown cards */}
+            {/* Category breakdown */}
             <div className="col-span-1 md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Category Breakdown</h3>
                 <Link to="/expenses" className="text-xs text-indigo-600 hover:underline">View all</Link>
               </div>
               {categoryData.length === 0 ? (
-                <div className="text-center py-8 text-gray-300 text-sm">No expenses this month</div>
+                <div className="text-center py-8 text-gray-300 text-sm">No expenses this period</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {categoryData.map((c, i) => {
@@ -354,10 +383,10 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Right column: Upcoming + Recent */}
+            {/* Right column */}
             <div className="col-span-1 flex flex-col gap-5">
 
-              {/* Upcoming DDs & SOs */}
+              {/* Upcoming payments */}
               <div className="bg-white rounded-2xl border border-gray-200 p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">Upcoming Payments</h3>
@@ -393,22 +422,25 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Recent transactions — more items, no flex-1 cap */}
+              {/* Recent transactions */}
               <div className="bg-white rounded-2xl border border-gray-200 p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">Recent</h3>
                   <Link to="/expenses" className="text-xs text-indigo-600 hover:underline">View all</Link>
                 </div>
                 {recentExpenses.length === 0 ? (
-                  <div className="text-center py-4 text-gray-300 text-xs">No transactions</div>
+                  <div className="text-center py-4 text-gray-300 text-xs">No transactions this period</div>
                 ) : (
                   <div className="space-y-2">
                     {recentExpenses.map((e, i) => (
                       <div key={i} className="flex items-center justify-between py-1">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: e.categories?.color || '#94a3b8' }} />
+                          <div className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: e.categories?.color || '#94a3b8' }} />
                           <div className="min-w-0">
-                            <p className="text-xs font-medium text-gray-800 leading-tight truncate max-w-36">{e.description || '—'}</p>
+                            <p className="text-xs font-medium text-gray-800 leading-tight truncate max-w-36">
+                              {e.description || '—'}
+                            </p>
                             <p className="text-xs text-gray-400 truncate">
                               {e.categories?.name || 'Uncategorised'} · {new Date(e.date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                             </p>
