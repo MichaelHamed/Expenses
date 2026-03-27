@@ -11,6 +11,8 @@ import Categories from './pages/Categories'
 import Recurring from './pages/Recurring'
 import Analytics from './pages/Analytics'
 
+const ALLOWED_EMAIL = 'mfawehinmi@hotmail.com'
+
 function ProtectedRoute({ session, children }) {
   if (!session) return <Navigate to="/login" replace />
   return children
@@ -21,10 +23,20 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
+      if (session && session.user.email !== ALLOWED_EMAIL) {
+        supabase.auth.signOut()
+        setSession(null)
+      } else {
+        setSession(session)
+      }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+      if (session && session.user.email !== ALLOWED_EMAIL) {
+        supabase.auth.signOut()
+        setSession(null)
+      } else {
+        setSession(session)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
