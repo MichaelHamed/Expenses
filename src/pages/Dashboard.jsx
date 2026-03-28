@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { ResponsiveGridLayout } from 'react-grid-layout'
-import 'react-grid-layout/css/styles.css'
-import 'react-resizable/css/styles.css'
 import { supabase } from '../lib/supabase'
-const STORAGE_KEY = 'pg-dashboard-layout'
 
-// ─── Pay-period helpers ────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────
 function fmt(n) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n || 0)
 }
@@ -47,6 +43,18 @@ function getCurrentPeriodStart() {
   if (today >= thisPayday) return thisPayday
   return getActualPayday(m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1)
 }
+function daysUntil(dayOfMonth) {
+  const today = new Date()
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
+  if (thisMonth <= today) return Math.ceil((new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth) - today) / 86400000)
+  return Math.ceil((thisMonth - today) / 86400000)
+}
+function nextDueDate(dayOfMonth) {
+  const today = new Date()
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
+  if (thisMonth <= today) return new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
+  return thisMonth
+}
 
 // ─── Category emoji ────────────────────────────────────────────────────────
 function getCategoryEmoji(name) {
@@ -72,21 +80,7 @@ function getCategoryEmoji(name) {
   return '💳'
 }
 
-// ─── Drag handle ───────────────────────────────────────────────────────────
-function DragHandle() {
-  return (
-    <div className="drag-handle cursor-grab active:cursor-grabbing flex justify-center pb-2 opacity-30 hover:opacity-60 transition-opacity select-none" title="Drag to rearrange">
-      <svg width="24" height="8" viewBox="0 0 24 8" fill="white">
-        <circle cx="3"  cy="2" r="1.5"/><circle cx="9"  cy="2" r="1.5"/>
-        <circle cx="15" cy="2" r="1.5"/><circle cx="21" cy="2" r="1.5"/>
-        <circle cx="3"  cy="6" r="1.5"/><circle cx="9"  cy="6" r="1.5"/>
-        <circle cx="15" cy="6" r="1.5"/><circle cx="21" cy="6" r="1.5"/>
-      </svg>
-    </div>
-  )
-}
-
-// ─── Gauge chart ───────────────────────────────────────────────────────────
+// ─── Gauge ─────────────────────────────────────────────────────────────────
 function GaugeChart({ spent, income }) {
   const r = 75, cx = 100, cy = 95
   const circ = 2 * Math.PI * r
@@ -139,7 +133,7 @@ function CalendarWidget() {
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
   const firstDow = new Date(year, month, 1).getDay()
-  const startOffset = (firstDow + 6) % 7 // Mon = 0
+  const startOffset = (firstDow + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const cells = []
   for (let i = 0; i < startOffset; i++) cells.push(null)
@@ -148,8 +142,7 @@ function CalendarWidget() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Month nav */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <button onClick={() => setViewDate(new Date(year, month - 1, 1))}
           className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-sm transition-colors">‹</button>
         <span className="text-sm font-semibold text-white">
@@ -158,16 +151,12 @@ function CalendarWidget() {
         <button onClick={() => setViewDate(new Date(year, month + 1, 1))}
           className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-sm transition-colors">›</button>
       </div>
-
-      {/* Day headers */}
       <div className="grid grid-cols-7 mb-1">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
           <div key={i} className="text-center text-xs text-white/50 font-medium py-0.5">{d}</div>
         ))}
       </div>
-
-      {/* Day cells */}
-      <div className="grid grid-cols-7 flex-1 content-start gap-y-0.5">
+      <div className="grid grid-cols-7 gap-y-1 flex-1">
         {cells.map((d, i) => {
           if (!d) return <div key={i} />
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
@@ -183,28 +172,9 @@ function CalendarWidget() {
           )
         })}
       </div>
-
-      {/* Legend */}
-      <p className="text-xs text-white/40 text-center mt-2">Dots = days with spending</p>
+      <p className="text-xs text-white/40 text-center mt-2">Coloured dot = spending that day</p>
     </div>
   )
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-function daysUntil(dayOfMonth) {
-  const today = new Date()
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
-  if (thisMonth <= today) {
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
-    return Math.ceil((nextMonth - today) / 86400000)
-  }
-  return Math.ceil((thisMonth - today) / 86400000)
-}
-function nextDueDate(dayOfMonth) {
-  const today = new Date()
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
-  if (thisMonth <= today) return new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
-  return thisMonth
 }
 
 const CUSTOM_TOOLTIP = ({ active, payload }) => {
@@ -219,38 +189,7 @@ const CUSTOM_TOOLTIP = ({ active, payload }) => {
   return null
 }
 
-// ─── Default grid layout ───────────────────────────────────────────────────
-const DEFAULT_LAYOUTS = {
-  lg: [
-    { i: 'greeting', x: 0, y: 0,  w: 4, h: 7 },
-    { i: 'gauge',    x: 4, y: 0,  w: 4, h: 7 },
-    { i: 'donut',    x: 8, y: 0,  w: 4, h: 7 },
-    { i: 'category', x: 0, y: 7,  w: 8, h: 5 },
-    { i: 'upcoming', x: 8, y: 7,  w: 4, h: 8 },
-    { i: 'calendar', x: 0, y: 12, w: 4, h: 7 },
-    { i: 'recent',   x: 4, y: 12, w: 8, h: 7 },
-  ],
-  md: [
-    { i: 'greeting', x: 0, y: 0,  w: 5, h: 7 },
-    { i: 'gauge',    x: 5, y: 0,  w: 5, h: 7 },
-    { i: 'donut',    x: 0, y: 7,  w: 5, h: 7 },
-    { i: 'category', x: 5, y: 7,  w: 5, h: 5 },
-    { i: 'upcoming', x: 0, y: 14, w: 5, h: 8 },
-    { i: 'calendar', x: 5, y: 14, w: 5, h: 7 },
-    { i: 'recent',   x: 0, y: 22, w: 10, h: 7 },
-  ],
-  sm: [
-    { i: 'greeting', x: 0, y: 0,  w: 6, h: 7 },
-    { i: 'gauge',    x: 0, y: 7,  w: 6, h: 7 },
-    { i: 'donut',    x: 0, y: 14, w: 6, h: 7 },
-    { i: 'category', x: 0, y: 21, w: 6, h: 5 },
-    { i: 'upcoming', x: 0, y: 26, w: 6, h: 8 },
-    { i: 'calendar', x: 0, y: 34, w: 6, h: 7 },
-    { i: 'recent',   x: 0, y: 41, w: 6, h: 7 },
-  ],
-}
-
-// ─── Dashboard ────────────────────────────────────────────────────────────
+// ─── Dashboard ─────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const now = new Date()
   const currentPeriodStart = getCurrentPeriodStart()
@@ -264,12 +203,6 @@ export default function Dashboard() {
   const [upcoming, setUpcoming] = useState([])
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(true)
-  const [layouts, setLayouts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? JSON.parse(saved) : DEFAULT_LAYOUTS
-    } catch { return DEFAULT_LAYOUTS }
-  })
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -343,53 +276,29 @@ export default function Dashboard() {
   const vsColor = prevSpent > 0 && spent > prevSpent ? 'text-red-300' : 'text-green-300'
   const periodLabel = `${fmtDate(periodStart)} → ${fmtDate(periodEnd)}`
 
-  function onLayoutChange(_, allLayouts) {
-    setLayouts(allLayouts)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allLayouts))
-  }
-
-  function resetLayout() {
-    setLayouts(DEFAULT_LAYOUTS)
-    localStorage.removeItem(STORAGE_KEY)
-  }
-
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
-        <div className="flex items-center gap-2">
-          <button onClick={resetLayout}
-            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10"
-            title="Reset widget layout">
-            ↺ Reset layout
-          </button>
-          <div className="flex items-center gap-1 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-xl px-1 py-1">
-            <button onClick={() => setPeriodStart(prevPeriodStart(periodStart))}
-              className="px-3 py-1.5 rounded-lg text-sm text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">‹</button>
-            <span className="text-xs font-medium text-gray-700 dark:text-white px-2 whitespace-nowrap">{periodLabel}</span>
-            <button onClick={() => { if (!isCurrentPeriod) setPeriodStart(nextPeriodStart(periodStart)) }}
-              disabled={isCurrentPeriod}
-              className="px-3 py-1.5 rounded-lg text-sm text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
-          </div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-1 py-1">
+          <button onClick={() => setPeriodStart(prevPeriodStart(periodStart))}
+            className="px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors">‹</button>
+          <span className="text-xs font-medium text-gray-700 px-2 whitespace-nowrap">{periodLabel}</span>
+          <button onClick={() => { if (!isCurrentPeriod) setPeriodStart(nextPeriodStart(periodStart)) }}
+            disabled={isCurrentPeriod}
+            className="px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
         </div>
       </div>
 
       {loading ? <div className="text-gray-400 text-sm">Loading...</div> : (
-        <ResponsiveGridLayout
-          layouts={layouts}
-          onLayoutChange={onLayoutChange}
-          breakpoints={{ lg: 1200, md: 996, sm: 0 }}
-          cols={{ lg: 12, md: 10, sm: 6 }}
-          rowHeight={50}
-          margin={[16, 16]}
-          draggableHandle=".drag-handle"
-          isResizable={false}>
+        <div className="space-y-5">
 
-          {/* ── Greeting ─────────────────────────────────────────────── */}
-          <div key="greeting">
-            <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-5 text-white h-full flex flex-col overflow-hidden">
-              <DragHandle />
+          {/* ROW 1: Greeting | Gauge | Donut */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            {/* Greeting */}
+            <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-6 text-white flex flex-col justify-between">
               <div>
                 <p className="text-indigo-200 text-sm">{getGreeting()},</p>
                 <h3 className="text-2xl font-bold mt-0.5">{displayName}</h3>
@@ -397,14 +306,13 @@ export default function Dashboard() {
                   {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
               </div>
-              <div className="mt-4 flex-1 flex flex-col justify-end">
+              <div className="mt-4">
                 <div className="flex justify-between text-xs text-indigo-200 mb-1">
                   <span>Pay period progress</span>
                   <span>{isCurrentPeriod ? `${periodPct}% · ${daysLeft}d left` : `${fmtDate(periodStart)} – ${fmtDate(periodEnd)}`}</span>
                 </div>
                 <div className="w-full bg-indigo-400/40 rounded-full h-2">
-                  <div className="bg-white h-2 rounded-full transition-all"
-                    style={{ width: `${isCurrentPeriod ? periodPct : 100}%` }} />
+                  <div className="bg-white h-2 rounded-full transition-all" style={{ width: `${isCurrentPeriod ? periodPct : 100}%` }} />
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   <div className="bg-white/10 rounded-xl p-3">
@@ -434,12 +342,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* ── Gauge ────────────────────────────────────────────────── */}
-          <div key="gauge">
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-5 h-full flex flex-col items-center justify-center overflow-hidden">
-              <DragHandle />
+            {/* Gauge */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-6 flex flex-col items-center justify-center">
               <h3 className="font-semibold text-white mb-1">Income Utilisation</h3>
               <p className="text-xs text-emerald-200 mb-3">{periodLabel}</p>
               <GaugeChart spent={spent} income={income} />
@@ -447,12 +352,9 @@ export default function Dashboard() {
                 <Link to="/income" className="text-xs text-white underline mt-2">+ Add income to see gauge</Link>
               )}
             </div>
-          </div>
 
-          {/* ── Donut ────────────────────────────────────────────────── */}
-          <div key="donut">
-            <div className="bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl p-5 h-full flex flex-col overflow-hidden">
-              <DragHandle />
+            {/* Donut */}
+            <div className="bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl p-6 flex flex-col">
               <h3 className="font-semibold text-white mb-1">Expense Distribution</h3>
               <p className="text-xs text-violet-200 mb-2">{periodLabel}</p>
               {categoryData.length === 0 ? (
@@ -482,18 +384,19 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* ── Category breakdown ───────────────────────────────────── */}
-          <div key="category">
-            <div className="bg-gradient-to-br from-fuchsia-600 to-purple-800 rounded-2xl p-5 h-full flex flex-col overflow-hidden">
-              <DragHandle />
-              <div className="flex items-center justify-between mb-3">
+          {/* ROW 2: Category (2/3) | Upcoming (1/3) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            {/* Category breakdown */}
+            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-fuchsia-600 to-purple-800 rounded-2xl p-5 self-start">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-white">Category Breakdown</h3>
                 <Link to="/expenses" className="text-xs text-white underline">View all</Link>
               </div>
               {categoryData.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-white/40 text-sm">No expenses this period</div>
+                <div className="text-center py-8 text-white/40 text-sm">No expenses this period</div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {categoryData.map((c, i) => {
                     const hasBudget = c.budget > 0
                     const budgetPct = hasBudget ? Math.min((c.value / c.budget) * 100, 100) : 0
@@ -524,24 +427,21 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* ── Upcoming payments ────────────────────────────────────── */}
-          <div key="upcoming">
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-800 rounded-2xl p-5 h-full flex flex-col overflow-hidden">
-              <DragHandle />
+            {/* Upcoming payments */}
+            <div className="bg-gradient-to-br from-indigo-600 to-blue-800 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-white">Upcoming Payments</h3>
                 <Link to="/recurring" className="text-xs text-white underline">Manage</Link>
               </div>
               {upcoming.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <div className="text-center py-5">
                   <p className="text-2xl mb-2">📅</p>
                   <p className="text-xs font-medium text-white">No payments due in 14 days</p>
-                  <Link to="/recurring" className="text-xs text-white underline mt-2">+ Add manually</Link>
+                  <Link to="/recurring" className="text-xs text-white underline mt-2 inline-block">+ Add manually</Link>
                 </div>
               ) : (
-                <div className="space-y-2 overflow-y-auto flex-1">
+                <div className="space-y-2">
                   {upcoming.map(r => {
                     const urgencyPct = Math.max(Math.round(((14 - r.days) / 14) * 100), 6)
                     const barColor = r.days === 0 ? '#fca5a5' : r.days <= 3 ? '#fcd34d' : '#ffffff'
@@ -574,29 +474,25 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* ── Calendar ─────────────────────────────────────────────── */}
-          <div key="calendar">
-            <div className="bg-gradient-to-br from-cyan-500 to-blue-700 rounded-2xl p-5 h-full flex flex-col overflow-hidden">
-              <DragHandle />
-              <h3 className="font-semibold text-white mb-2">Calendar</h3>
-              <div className="flex-1 min-h-0">
-                <CalendarWidget />
-              </div>
-            </div>
-          </div>
+          {/* ROW 3: Calendar (1/3) | Recent (2/3) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-          {/* ── Recent ───────────────────────────────────────────────── */}
-          <div key="recent">
-            <div className="bg-gradient-to-br from-rose-500 to-pink-700 rounded-2xl p-5 h-full flex flex-col overflow-hidden">
-              <DragHandle />
+            {/* Calendar */}
+            <div className="bg-gradient-to-br from-cyan-500 to-blue-700 rounded-2xl p-5">
+              <h3 className="font-semibold text-white mb-3">Calendar</h3>
+              <CalendarWidget />
+            </div>
+
+            {/* Recent */}
+            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-rose-500 to-pink-700 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-white">Recent</h3>
                 <Link to="/expenses" className="text-xs text-white underline">View all</Link>
               </div>
               {recentExpenses.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-white/40 text-xs">No transactions this period</div>
+                <div className="text-center py-4 text-white/40 text-xs">No transactions this period</div>
               ) : (
-                <div className="space-y-2 overflow-y-auto flex-1">
+                <div className="space-y-2">
                   {recentExpenses.map((e, i) => (
                     <div key={i} className="flex items-center justify-between py-1">
                       <div className="flex items-center gap-2 min-w-0">
@@ -619,7 +515,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-        </ResponsiveGridLayout>
+        </div>
       )}
     </div>
   )
