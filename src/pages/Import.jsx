@@ -3,6 +3,138 @@ import Papa from 'papaparse'
 import { supabase } from '../lib/supabase'
 import { syncToRecurring } from '../lib/syncRecurring'
 
+// ─── PDF parsing (Halifax layout) ────────────────────────────────────────────
+
+async function parsePdfFile(file) {
+  const pdfjsLib = await import('pdfjs-dist')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).href
+
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const allTransactions = []
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum)
+    const textContent = await page.getTextContent()
+
+    const items = textContent.items
+      .filter(item => item.str && item.str.trim())
+      .map(item => ({
+        text: item.str.trim(),
+        x: Math.round(item.transform[4]),
+        y: Math.round(item.transform[5]),
+      }))
+
+    if (!items.length) continue
+
+    // Group items into rows by y-coordinate (3pt tolerance)
+    const rowMap = {}
+    items.forEach(item => {
+      const existingKey = Object.keys(rowMap).find(k => Math.abs(Number(k) - item.y) <= 3)
+      const key = existingKey !== undefined ? existingKey : String(item.y)
+      if (!rowMap[key]) rowMap[key] = []
+      rowMap[key].push(item)
+    })
+
+    // Sort rows top→bottom (descending y in PDF coords = top of page first)
+    const sortedRows = Object.entries(rowMap)
+      .sort(([a], [b]) => Number(b) - Number(a))
+      .map(([, rowItems]) => rowItems.sort((a, b) => a.x - b.x))
+
+    // Find the header row containing Date / Description / Type
+    let headerIdx = -1
+    const colPositions = {}
+
+    for (let i = 0; i < sortedRows.length; i++) {
+      const texts = sortedRows[i].map(r => r.text.toLowerCase())
+      if (texts.includes('date') && texts.includes('description') && texts.includes('type')) {
+        headerIdx = i
+        sortedRows[i].forEach(item => {
+          const t = item.text.toLowerCase()
+          if (t === 'date')                       colPositions.date        = item.x
+          else if (t === 'description')            colPositions.description = item.x
+          else if (t === 'type')                   colPositions.type        = item.x
+          else if (t.includes('money in'))         colPositions.moneyIn     = item.x
+          else if (t.includes('money out'))        colPositions.moneyOut    = item.x
+          else if (t.includes('balance'))          colPositions.balance     = item.x
+        })
+        break
+      }
+    }
+
+    if (headerIdx === -1 || colPositions.date === undefined) continue
+
+    const colEntries = Object.entries(colPositions)
+    const datePattern = /^\d{2}\s+\w{3}\s+\d{2}$/
+
+    for (let i = headerIdx + 1; i < sortedRows.length; i++) {
+      const row = sortedRows[i]
+      if (!row.length || !datePattern.test(row[0].text)) continue
+
+      const txn = { date: '', description: '', type: '', moneyIn: '', moneyOut: '', balance: '' }
+
+      row.forEach(item => {
+        let nearest = { col: null, dist: Infinity }
+        colEntries.forEach(([col, cx]) => {
+          const dist = Math.abs(item.x - cx)
+          if (dist < nearest.dist) nearest = { col, dist }
+        })
+        if (nearest.col && nearest.dist < 60) {
+          txn[nearest.col] = txn[nearest.col] ? txn[nearest.col] + ' ' + item.text : item.text
+        }
+      })
+
+      if (txn.date) allTransactions.push(txn)
+    }
+  }
+
+  return allTransactions
+}
+
+function processPdfTransactions(transactions, categories, learnedMap) {
+  const MONTH_MAP = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
+                      jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' }
+  const parsed = []
+  const parsedIncome = []
+
+  transactions.forEach(txn => {
+    const parts = txn.date.trim().split(/\s+/)
+    const m = MONTH_MAP[parts[1]?.toLowerCase().substring(0, 3)]
+    if (!m || parts.length < 3) return
+    const yr = parts[2].length === 2 ? `20${parts[2]}` : parts[2]
+    const parsedDate = `${yr}-${m}-${parts[0].padStart(2, '0')}`
+
+    const moneyOut = parseFloat((txn.moneyOut || '').replace(/,/g, '')) || 0
+    const moneyIn  = parseFloat((txn.moneyIn  || '').replace(/,/g, '')) || 0
+    const txType   = (txn.type || '').trim().toUpperCase()
+    const description = txn.description || ''
+    const isRoundUp = description.toUpperCase().includes('SAVETHECHANGE')
+
+    if (moneyOut > 0) {
+      const key = description.trim().toLowerCase()
+      parsed.push({
+        date: parsedDate,
+        description,
+        amount: moneyOut,
+        paymentType: txType === 'DD' ? 'DD' : txType === 'SO' ? 'SO' : null,
+        include: true,
+        category_id: learnedMap[key] || autoCategory(description, categories),
+      })
+    } else if (moneyIn > 0 && !isRoundUp) {
+      const source = txType === 'TFR' || txType === 'FPI' ? 'Transfer'
+                   : txType === 'CSH' ? 'Cash'
+                   : txType === 'BGC' ? 'Salary'
+                   : 'Other'
+      parsedIncome.push({ date: parsedDate, description, amount: moneyIn, source, include: true })
+    }
+  })
+
+  return { parsed, parsedIncome }
+}
+
 // Keyword → category name mapping (matched against transaction description)
 const CATEGORY_KEYWORDS = {
   'Food & Drink':     ['lidl','tesco store','aldi','sainsbury','asda','morrisons','waitrose','costco','co-op','iceland','marks & spencer','m&s food','greggs'],
@@ -244,7 +376,7 @@ export default function Import() {
       })
   }, [])
 
-  function handleFile(e) {
+  async function handleFile(e) {
     const file = e.target.files[0]
     if (!file) return
     setSaved(false)
@@ -252,6 +384,35 @@ export default function Import() {
     setRows([])
     setIncomeRows([])
 
+    const isPdf = file.name.toLowerCase().endsWith('.pdf')
+
+    if (isPdf) {
+      setChecking(true)
+      try {
+        const transactions = await parsePdfFile(file)
+        if (!transactions.length) {
+          setError('No transactions found in this PDF. Only Halifax PDF statements are supported.')
+          setChecking(false)
+          return
+        }
+        setBank('halifax')
+        const { parsed, parsedIncome } = processPdfTransactions(transactions, categories, learnedMap)
+        if (!parsed.length && !parsedIncome.length) {
+          setError('Could not extract transactions. Make sure this is a Halifax PDF statement.')
+          setChecking(false)
+          return
+        }
+        const { markedParsed, markedIncome } = await checkForDuplicates(parsed, parsedIncome)
+        setRows(markedParsed)
+        setIncomeRows(markedIncome)
+      } catch (err) {
+        setError('Failed to read PDF: ' + (err.message || 'unknown error'))
+      }
+      setChecking(false)
+      return
+    }
+
+    // CSV path
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -279,7 +440,6 @@ export default function Import() {
           return
         }
 
-        // Check against existing DB records for duplicates
         setChecking(true)
         const { markedParsed, markedIncome } = await checkForDuplicates(parsed, parsedIncome)
         setChecking(false)
@@ -287,7 +447,7 @@ export default function Import() {
         setRows(markedParsed)
         setIncomeRows(markedIncome)
       },
-      error: () => setError('Could not read the file. Make sure it is a CSV.'),
+      error: () => setError('Could not read the file. Make sure it is a valid CSV or Halifax PDF.'),
     })
   }
 
@@ -387,18 +547,24 @@ export default function Import() {
     <div className="max-w-4xl">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Import Bank Statement</h2>
-        <p className="text-gray-500 text-sm mt-0.5">Upload a CSV exported from your online banking</p>
+        <p className="text-gray-500 text-sm mt-0.5">Upload a Halifax PDF statement or a CSV exported from your online banking</p>
       </div>
 
       {/* Upload area */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-        <h3 className="font-semibold text-gray-900 mb-1">Supported banks</h3>
-        <p className="text-xs text-gray-400 mb-4">Halifax · Barclays · HSBC · Lloyds · NatWest · Monzo · Starling</p>
+        <h3 className="font-semibold text-gray-900 mb-1">Supported formats</h3>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">Halifax PDF ✓</span>
+          <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Halifax CSV</span>
+          <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Barclays</span>
+          <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">HSBC</span>
+          <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Lloyds · NatWest · Monzo · Starling</span>
+        </div>
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
           <span className="text-3xl mb-2">📂</span>
-          <span className="text-sm font-medium text-gray-700">Click to choose a CSV file</span>
-          <span className="text-xs text-gray-400 mt-1">Export from your bank's website → Statements → Download CSV</span>
-          <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
+          <span className="text-sm font-medium text-gray-700">Click to choose a PDF or CSV file</span>
+          <span className="text-xs text-gray-400 mt-1">Halifax PDF statements are imported directly · Other banks use CSV export</span>
+          <input ref={fileRef} type="file" accept=".csv,.pdf" onChange={handleFile} className="hidden" />
         </label>
         {categories.length === 0 && (
           <p className="text-amber-700 text-sm mt-3 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
