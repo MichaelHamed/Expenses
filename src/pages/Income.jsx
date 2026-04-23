@@ -94,6 +94,7 @@ export default function Income() {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState(null)
+  const [showMobileForm, setShowMobileForm] = useState(false)
 
   useEffect(() => { fetchEntries() }, [year, month])
 
@@ -124,6 +125,10 @@ export default function Income() {
           <p className="text-gray-500 text-sm mt-0.5">Track what you earn each month</p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
+            className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+            + Add
+          </button>
           <select value={month} onChange={e => setMonth(Number(e.target.value))}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
@@ -135,18 +140,22 @@ export default function Income() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-1 bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">{editItem ? 'Edit Entry' : 'Add Income'}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className={`col-span-1 bg-white rounded-2xl border border-gray-200 p-6 self-start ${showMobileForm || editItem ? 'block' : 'hidden md:block'}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">{editItem ? 'Edit Entry' : 'Add Income'}</h3>
+            <button onClick={() => { setShowMobileForm(false); setEditItem(null) }}
+              className="md:hidden text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          </div>
           <IncomeForm
             key={editItem?.id || 'new'}
-            onSaved={fetchEntries}
+            onSaved={() => { fetchEntries(); setShowMobileForm(false) }}
             editItem={editItem}
-            onCancel={() => setEditItem(null)}
+            onCancel={() => { setEditItem(null); setShowMobileForm(false) }}
           />
         </div>
 
-        <div className="col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
+        <div className={`md:col-span-2 bg-white rounded-2xl border border-gray-200 p-6 ${showMobileForm || editItem ? 'hidden md:block' : 'block'}`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">{MONTHS[month - 1]} {year}</h3>
             <span className="text-sm font-semibold text-green-700">Total: {fmt(total)}</span>
@@ -173,7 +182,7 @@ export default function Income() {
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-green-700">{fmt(e.amount)}</span>
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                      <button onClick={() => setEditItem(e)} className="text-xs text-indigo-600 hover:underline">Edit</button>
+                      <button onClick={() => { setEditItem(e); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
                       <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                     </div>
                   </div>

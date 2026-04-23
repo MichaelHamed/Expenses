@@ -119,6 +119,7 @@ export default function Recurring() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState(null)
+  const [showMobileForm, setShowMobileForm] = useState(false)
 
   useEffect(() => {
     fetchCategories()
@@ -182,7 +183,7 @@ export default function Recurring() {
               className={`text-xs px-2 py-0.5 rounded-full border ${p.is_active ? 'text-gray-500 border-gray-300 hover:bg-gray-100' : 'text-green-600 border-green-300 hover:bg-green-50'}`}>
               {p.is_active ? 'Pause' : 'Resume'}
             </button>
-            <button onClick={() => setEditItem(p)} className="text-xs text-indigo-600 hover:underline">Edit</button>
+            <button onClick={() => { setEditItem(p); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
             <button onClick={() => handleDelete(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
           </div>
         </div>
@@ -192,9 +193,15 @@ export default function Recurring() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Recurring Payments</h2>
-        <p className="text-gray-500 text-sm mt-0.5">Manage your direct debits and standing orders</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Recurring Payments</h2>
+          <p className="text-gray-500 text-sm mt-0.5">Manage your direct debits and standing orders</p>
+        </div>
+        <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
+          className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+          + Add
+        </button>
       </div>
 
       {/* Summary cards */}
@@ -217,21 +224,25 @@ export default function Recurring() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Form */}
-        <div className="col-span-1 bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">{editItem ? 'Edit Payment' : 'Add Payment'}</h3>
+        <div className={`col-span-1 bg-white rounded-2xl border border-gray-200 p-6 self-start ${showMobileForm || editItem ? 'block' : 'hidden md:block'}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">{editItem ? 'Edit Payment' : 'Add Payment'}</h3>
+            <button onClick={() => { setShowMobileForm(false); setEditItem(null) }}
+              className="md:hidden text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          </div>
           <RecurringForm
             key={editItem?.id || 'new'}
             categories={categories}
-            onSaved={fetchPayments}
+            onSaved={() => { fetchPayments(); setShowMobileForm(false) }}
             editItem={editItem}
-            onCancel={() => setEditItem(null)}
+            onCancel={() => { setEditItem(null); setShowMobileForm(false) }}
           />
         </div>
 
         {/* List */}
-        <div className="col-span-2 space-y-5">
+        <div className={`md:col-span-2 space-y-5 ${showMobileForm || editItem ? 'hidden md:block' : 'block'}`}>
           {/* Direct Debits */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-3">

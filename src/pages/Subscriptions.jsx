@@ -198,6 +198,7 @@ export default function Subscriptions() {
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState(null)
   const [seeding, setSeeding] = useState(false)
+  const [showMobileForm, setShowMobileForm] = useState(false)
 
   useEffect(() => { fetchSubs() }, [])
 
@@ -287,16 +288,22 @@ export default function Subscriptions() {
             Track annual and monthly subscriptions — see what's coming up so you're never caught short
           </p>
         </div>
-        {subs.length === 0 && !loading && (
-          <button onClick={seedData} disabled={seeding}
-            className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 border border-indigo-200 disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700">
-            {seeding ? 'Loading…' : '✨ Load my subscriptions'}
+        <div className="flex items-center gap-2">
+          {subs.length === 0 && !loading && (
+            <button onClick={seedData} disabled={seeding}
+              className="hidden md:block px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 border border-indigo-200 disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700">
+              {seeding ? 'Loading…' : '✨ Load my subscriptions'}
+            </button>
+          )}
+          <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
+            className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+            + Add
           </button>
-        )}
+        </div>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-5">
           <p className="text-xs text-gray-400 mb-1">Monthly equivalent</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(monthlyEquiv)}</p>
@@ -318,7 +325,8 @@ export default function Subscriptions() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-5 mb-6">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Next 12 months</h3>
         <p className="text-xs text-gray-400 mb-4">Monthly outgoing — hover a bar to see what's due</p>
-        <div className="grid grid-cols-12 gap-1">
+        <div className="overflow-x-auto">
+        <div className="grid grid-cols-12 gap-1 min-w-[480px]">
           {months.map(m => (
             <div key={`${m.yr}-${m.mo}`} className="flex flex-col items-center group relative">
               <div className="text-xs text-gray-400 mb-1 font-medium leading-tight text-center">{m.label}</div>
@@ -348,6 +356,7 @@ export default function Subscriptions() {
               {m.isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-0.5" />}
             </div>
           ))}
+        </div>
         </div>
       </div>
 
@@ -386,22 +395,26 @@ export default function Subscriptions() {
       )}
 
       {/* Form + List */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Add / Edit form */}
-        <div className="col-span-1 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 self-start">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-            {editItem ? 'Edit subscription' : 'Add subscription'}
-          </h3>
+        <div className={`col-span-1 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 self-start ${showMobileForm || editItem ? 'block' : 'hidden md:block'}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              {editItem ? 'Edit subscription' : 'Add subscription'}
+            </h3>
+            <button onClick={() => { setShowMobileForm(false); setEditItem(null) }}
+              className="md:hidden text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          </div>
           <SubForm
             key={editItem?.id || 'new'}
             editItem={editItem}
-            onSaved={() => { fetchSubs(); setEditItem(null) }}
-            onCancel={() => setEditItem(null)}
+            onSaved={() => { fetchSubs(); setEditItem(null); setShowMobileForm(false) }}
+            onCancel={() => { setEditItem(null); setShowMobileForm(false) }}
           />
         </div>
 
         {/* Subscription list */}
-        <div className="col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
+        <div className={`md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 ${showMobileForm || editItem ? 'hidden md:block' : 'block'}`}>
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">All subscriptions</h3>
           {loading ? (
             <p className="text-gray-400 text-sm">Loading…</p>
@@ -447,7 +460,7 @@ export default function Subscriptions() {
                         className="text-xs px-2 py-0.5 rounded-full border border-gray-300 dark:border-slate-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-600">
                         {s.is_active ? 'Pause' : 'Resume'}
                       </button>
-                      <button onClick={() => setEditItem(s)} className="text-xs text-indigo-600 hover:underline">Edit</button>
+                      <button onClick={() => { setEditItem(s); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
                       <button onClick={() => deleteSub(s.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                     </div>
                   </div>
