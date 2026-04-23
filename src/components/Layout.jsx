@@ -7,6 +7,7 @@ const navItems = [
   { to: '/expenses', label: 'Expenses', icon: '💸' },
   { to: '/income', label: 'Income', icon: '💰' },
   { to: '/recurring', label: 'Direct Debits', icon: '🔄' },
+  { to: '/subscriptions', label: 'Subscriptions', icon: '📦' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/import', label: 'Import', icon: '📥' },
   { to: '/categories', label: 'Categories', icon: '🏷️' },

@@ -10,6 +10,7 @@ import Import from './pages/Import'
 import Categories from './pages/Categories'
 import Recurring from './pages/Recurring'
 import Analytics from './pages/Analytics'
+import Subscriptions from './pages/Subscriptions'
 
 const ALLOWED_EMAIL = 'mfawehinmi@hotmail.com'
 
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="expenses" element={<Expenses />} />
           <Route path="income" element={<Income />} />
           <Route path="recurring" element={<Recurring />} />
+          <Route path="subscriptions" element={<Subscriptions />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="import" element={<Import />} />
           <Route path="categories" element={<Categories />} />
