@@ -194,6 +194,7 @@ function SubForm({ editItem, onSaved, onCancel }) {
 
 export default function Subscriptions() {
   const [subs, setSubs] = useState([])
+  const [recurring, setRecurring] = useState([])
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState(null)
   const [seeding, setSeeding] = useState(false)
@@ -202,8 +203,12 @@ export default function Subscriptions() {
 
   async function fetchSubs() {
     setLoading(true)
-    const { data } = await supabase.from('subscriptions').select('*').order('name')
-    setSubs(data || [])
+    const [{ data: subsData }, { data: recData }] = await Promise.all([
+      supabase.from('subscriptions').select('*').order('name'),
+      supabase.from('recurring_payments').select('*, categories(name, color)').order('name'),
+    ])
+    setSubs(subsData || [])
+    setRecurring(recData || [])
     setLoading(false)
   }
 
@@ -226,13 +231,15 @@ export default function Subscriptions() {
     fetchSubs()
   }
 
-  // ── Totals ──
+  // ── Totals (subscriptions + recurring DDs/SOs) ──
   const active = subs.filter(s => s.is_active)
-  const monthlyEquiv = active.reduce((sum, s) => sum + toMonthly(s.amount, s.billing_frequency), 0)
+  const activeRec = recurring.filter(r => r.is_active)
+  const recMonthly = activeRec.reduce((sum, r) => sum + Number(r.amount), 0)
+  const monthlyEquiv = active.reduce((sum, s) => sum + toMonthly(s.amount, s.billing_frequency), 0) + recMonthly
   const annualTotal = active.reduce((sum, s) => {
     if (s.billing_frequency === 'monthly') return sum + s.amount * 12
     return sum + s.amount
-  }, 0)
+  }, 0) + recMonthly * 12
   const dueSoonCount = active.filter(s =>
     s.billing_frequency !== 'monthly' && s.next_renewal_date &&
     daysUntil(s.next_renewal_date) !== null &&
@@ -248,17 +255,22 @@ export default function Subscriptions() {
     .sort((a, b) => a.days - b.days)
     .slice(0, 6)
 
-  // ── 12-month timeline from today ──
+  // ── 12-month timeline from today (subs + recurring combined) ──
   const now = new Date()
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
     const yr = d.getFullYear(), mo = d.getMonth()
     const mSubs = subsForMonth(active, yr, mo)
-    const total = mSubs.reduce((sum, s) => sum + s.amount, 0)
+    const subTotal = mSubs.reduce((sum, s) => sum + s.amount, 0)
+    const total = subTotal + recMonthly
+    const allItems = [
+      ...mSubs,
+      ...activeRec.map(r => ({ ...r, _isRec: true })),
+    ]
     return {
       yr, mo,
       label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
-      subs: mSubs,
+      subs: allItems,
       total,
       isCurrent: i === 0,
     }
@@ -441,6 +453,41 @@ export default function Subscriptions() {
                   </div>
                 )
               })}
+
+              {/* Direct Debits & Standing Orders — read-only from Recurring page */}
+              {activeRec.length > 0 && (
+                <>
+                  <div className="flex items-center gap-3 pt-4 pb-2">
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
+                    <span className="text-xs text-gray-400 font-medium uppercase tracking-wide whitespace-nowrap">
+                      Direct Debits & Standing Orders
+                    </span>
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-slate-700" />
+                  </div>
+                  {activeRec.map(r => (
+                    <div key={r.id}
+                      className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-gray-50/50 dark:bg-slate-700/30">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${r.type === 'DD' ? 'bg-red-400' : 'bg-amber-400'}`}>
+                        {r.type}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">{r.name}</p>
+                        <p className="text-xs text-gray-400">
+                          Monthly · day {r.day_of_month}
+                          {r.categories?.name && ` · ${r.categories.name}`}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">{fmt(r.amount)}</p>
+                        <p className="text-xs text-gray-400">/mo</p>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-400 text-right pt-1">
+                    Managed in <a href="/recurring" className="text-indigo-500 hover:underline">Direct Debits →</a>
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

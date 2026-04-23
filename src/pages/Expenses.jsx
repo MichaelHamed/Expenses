@@ -185,6 +185,7 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
   const [suggestions, setSuggestions] = useState([])
+  const [subNames, setSubNames] = useState([])
   const [loading, setLoading] = useState(true)
   const [editItem, setEditItem] = useState(null)
   const [selected, setSelected] = useState(new Set())
@@ -205,6 +206,16 @@ export default function Expenses() {
       .not('description', 'is', null)
       .order('date', { ascending: false })
       .limit(500)
+
+    // Fetch subscription + recurring names for badge matching
+    const [{ data: subsData }, { data: recData }] = await Promise.all([
+      supabase.from('subscriptions').select('name'),
+      supabase.from('recurring_payments').select('name'),
+    ])
+    setSubNames([
+      ...(subsData || []).map(s => s.name),
+      ...(recData || []).map(r => r.name),
+    ])
 
     const seen = new Set()
     const deduped = (hist || []).reduce((acc, e) => {
@@ -297,6 +308,15 @@ export default function Expenses() {
     a.download = `expenses-${year}-${String(month).padStart(2, '0')}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  function matchesSub(description) {
+    if (!description || !subNames.length) return false
+    const desc = description.toLowerCase()
+    return subNames.some(name => {
+      const words = name.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+      return words.some(w => desc.includes(w))
+    })
   }
 
   const total = filtered.reduce((s, e) => s + Number(e.amount), 0)
@@ -452,6 +472,7 @@ export default function Expenses() {
                         <p className="text-sm font-medium text-gray-800">{e.description || '—'}</p>
                         {e.payment_type === 'DD' && <span className="text-xs font-bold text-white bg-red-400 px-1.5 py-0.5 rounded">DD · {new Date(e.date + 'T12:00:00').getDate()}</span>}
                         {e.payment_type === 'SO' && <span className="text-xs font-bold text-white bg-amber-400 px-1.5 py-0.5 rounded">SO · {new Date(e.date + 'T12:00:00').getDate()}</span>}
+                        {matchesSub(e.description) && <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100" title="Matches a subscription">📦 Sub</span>}
                       </div>
                       <p className="text-xs text-gray-400">
                         {e.categories?.name || 'Uncategorised'} · {new Date(e.date).toLocaleDateString('en-GB')}
