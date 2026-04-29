@@ -306,6 +306,12 @@ function fmt(amount) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount || 0)
 }
 
+// Normalise a description for comparison — strips punctuation and collapses whitespace
+// so "AMAZON.CO.UK" and "AMAZON CO UK" both become "amazon co uk" and match correctly
+function normalizeDesc(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
 async function checkForDuplicates(parsed, parsedIncome) {
   const markedParsed = [...parsed]
   const markedIncome = [...parsedIncome]
@@ -318,15 +324,15 @@ async function checkForDuplicates(parsed, parsedIncome) {
       .gte('date', dates[0])
       .lte('date', dates[dates.length - 1])
     const existingSet = new Set(
-      (existing || []).map(e => `${e.date}|${e.description?.trim().toLowerCase()}|${Number(e.amount).toFixed(2)}`)
+      (existing || []).map(e => `${e.date}|${normalizeDesc(e.description)}|${Number(e.amount).toFixed(2)}`)
     )
     markedParsed.forEach((r, i) => {
-      const key = `${r.date}|${r.description?.trim().toLowerCase()}|${Number(r.amount).toFixed(2)}`
+      const key = `${r.date}|${normalizeDesc(r.description)}|${Number(r.amount).toFixed(2)}`
       if (existingSet.has(key)) markedParsed[i] = { ...r, duplicate: true, include: false }
     })
   }
 
-  // Check income duplicates
+  // Check income duplicates — income is stored with description in the `notes` column
   if (parsedIncome.length) {
     const dates = parsedIncome.map(r => r.date).filter(Boolean).sort()
     const { data: existing } = await supabase.from('income_entries')
@@ -334,10 +340,10 @@ async function checkForDuplicates(parsed, parsedIncome) {
       .gte('date', dates[0])
       .lte('date', dates[dates.length - 1])
     const existingSet = new Set(
-      (existing || []).map(e => `${e.date}|${e.notes?.trim().toLowerCase()}|${Number(e.amount).toFixed(2)}`)
+      (existing || []).map(e => `${e.date}|${normalizeDesc(e.notes)}|${Number(e.amount).toFixed(2)}`)
     )
     markedIncome.forEach((r, i) => {
-      const key = `${r.date}|${r.description?.trim().toLowerCase()}|${Number(r.amount).toFixed(2)}`
+      const key = `${r.date}|${normalizeDesc(r.description)}|${Number(r.amount).toFixed(2)}`
       if (existingSet.has(key)) markedIncome[i] = { ...r, duplicate: true, include: false }
     })
   }

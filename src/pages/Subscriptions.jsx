@@ -232,6 +232,16 @@ export default function Subscriptions() {
     fetchSubs()
   }
 
+  async function renewSub(s) {
+    if (!s.next_renewal_date) return
+    const current = new Date(s.next_renewal_date + 'T12:00:00')
+    const next = new Date(current)
+    next.setFullYear(next.getFullYear() + 1)
+    const nextDate = next.toISOString().split('T')[0]
+    await supabase.from('subscriptions').update({ next_renewal_date: nextDate }).eq('id', s.id)
+    fetchSubs()
+  }
+
   // ── Totals (subscriptions + recurring DDs/SOs) ──
   const active = subs.filter(s => s.is_active)
   const activeRec = recurring.filter(r => r.is_active)
@@ -455,7 +465,10 @@ export default function Subscriptions() {
                     {urgentFlag && (
                       <span className="text-xs text-red-500 font-semibold flex-shrink-0">{days}d</span>
                     )}
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-2 transition-opacity flex-shrink-0">
+                    <div className="md:opacity-0 md:group-hover:opacity-100 flex items-center gap-2 transition-opacity flex-shrink-0">
+                      {s.billing_frequency === 'annual' && s.next_renewal_date && (
+                        <button onClick={() => renewSub(s)} className="text-xs text-green-600 hover:underline">Renew</button>
+                      )}
                       <button onClick={() => toggleActive(s)}
                         className="text-xs px-2 py-0.5 rounded-full border border-gray-300 dark:border-slate-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-600">
                         {s.is_active ? 'Pause' : 'Resume'}
