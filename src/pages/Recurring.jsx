@@ -5,14 +5,28 @@ function fmt(n) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n || 0)
 }
 
-function daysUntil(dayOfMonth) {
-  const today = new Date()
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
-  if (thisMonth <= today) {
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
-    return Math.ceil((nextMonth - today) / 86400000)
+function effectiveDay(dayOfMonth, weekendRule, year, month) {
+  if (!weekendRule || weekendRule === 'none') return dayOfMonth
+  const dow = new Date(year, month, dayOfMonth).getDay()
+  if (weekendRule === 'before') {
+    if (dow === 6) return dayOfMonth - 1
+    if (dow === 0) return dayOfMonth - 2
   }
-  return Math.ceil((thisMonth - today) / 86400000)
+  if (weekendRule === 'after') {
+    if (dow === 6) return dayOfMonth + 2
+    if (dow === 0) return dayOfMonth + 1
+  }
+  return dayOfMonth
+}
+
+function daysUntil(dayOfMonth, weekendRule) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const ty = today.getFullYear(), tm = today.getMonth()
+  const thisDay = effectiveDay(dayOfMonth, weekendRule, ty, tm)
+  const thisDate = new Date(ty, tm, thisDay)
+  if (thisDate > today) return Math.ceil((thisDate - today) / 86400000)
+  const nextDay = effectiveDay(dayOfMonth, weekendRule, ty, tm + 1)
+  return Math.ceil((new Date(ty, tm + 1, nextDay) - today) / 86400000)
 }
 
 function RecurringForm({ categories, onSaved, editItem, onCancel }) {
@@ -20,6 +34,7 @@ function RecurringForm({ categories, onSaved, editItem, onCancel }) {
     name: editItem?.name || '',
     amount: editItem?.amount || '',
     day_of_month: editItem?.day_of_month || 1,
+    weekend_rule: editItem?.weekend_rule || 'none',
     type: editItem?.type || 'DD',
     category_id: editItem?.category_id || '',
     is_active: editItem?.is_active ?? true,
@@ -73,6 +88,15 @@ function RecurringForm({ categories, onSaved, editItem, onCancel }) {
           <input type="number" min="1" max="31" value={form.day_of_month} onChange={e => set('day_of_month', e.target.value)} required
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">If day falls on a weekend</label>
+        <select value={form.weekend_rule} onChange={e => set('weekend_rule', e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="none">Pay on exact day</option>
+          <option value="before">Pay Friday before</option>
+          <option value="after">Pay Monday after</option>
+        </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -157,8 +181,9 @@ export default function Recurring() {
   const totalSOs = sos.filter(p => p.is_active).reduce((s, p) => s + Number(p.amount), 0)
 
   function PaymentRow({ p }) {
-    const days = daysUntil(p.day_of_month)
+    const days = daysUntil(p.day_of_month, p.weekend_rule)
     const soon = days <= 7
+    const weekendLabel = p.weekend_rule === 'before' ? ' · Fri if weekend' : p.weekend_rule === 'after' ? ' · Mon if weekend' : ''
     return (
       <div className={`flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 group ${!p.is_active ? 'opacity-50' : ''}`}>
         <div className="flex items-center gap-3">
@@ -168,7 +193,7 @@ export default function Recurring() {
           <div>
             <p className="text-sm font-medium text-gray-800">{p.name}</p>
             <p className="text-xs text-gray-400">
-              Day {p.day_of_month} each month
+              Day {p.day_of_month} each month{weekendLabel}
               {p.categories && ` · ${p.categories.name}`}
               {p.is_active && <span className={`ml-2 ${soon ? 'text-amber-500 font-medium' : 'text-gray-400'}`}>
                 {days === 0 ? '· Due today!' : days === 1 ? '· Due tomorrow' : soon ? `· Due in ${days} days` : ''}

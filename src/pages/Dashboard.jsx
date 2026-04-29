@@ -43,17 +43,36 @@ function getCurrentPeriodStart() {
   if (today >= thisPayday) return thisPayday
   return getActualPayday(m === 1 ? y - 1 : y, m === 1 ? 12 : m - 1)
 }
-function daysUntil(dayOfMonth) {
-  const today = new Date()
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
-  if (thisMonth <= today) return Math.ceil((new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth) - today) / 86400000)
-  return Math.ceil((thisMonth - today) / 86400000)
+function effectiveDay(dayOfMonth, weekendRule, year, month) {
+  if (!weekendRule || weekendRule === 'none') return dayOfMonth
+  const dow = new Date(year, month, dayOfMonth).getDay()
+  if (weekendRule === 'before') {
+    if (dow === 6) return dayOfMonth - 1
+    if (dow === 0) return dayOfMonth - 2
+  }
+  if (weekendRule === 'after') {
+    if (dow === 6) return dayOfMonth + 2
+    if (dow === 0) return dayOfMonth + 1
+  }
+  return dayOfMonth
 }
-function nextDueDate(dayOfMonth) {
-  const today = new Date()
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth)
-  if (thisMonth <= today) return new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth)
-  return thisMonth
+function daysUntil(dayOfMonth, weekendRule) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const ty = today.getFullYear(), tm = today.getMonth()
+  const thisDay = effectiveDay(dayOfMonth, weekendRule, ty, tm)
+  const thisDate = new Date(ty, tm, thisDay)
+  if (thisDate > today) return Math.ceil((thisDate - today) / 86400000)
+  const nextDay = effectiveDay(dayOfMonth, weekendRule, ty, tm + 1)
+  return Math.ceil((new Date(ty, tm + 1, nextDay) - today) / 86400000)
+}
+function nextDueDate(dayOfMonth, weekendRule) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const ty = today.getFullYear(), tm = today.getMonth()
+  const thisDay = effectiveDay(dayOfMonth, weekendRule, ty, tm)
+  const thisDate = new Date(ty, tm, thisDay)
+  if (thisDate > today) return thisDate
+  const nextDay = effectiveDay(dayOfMonth, weekendRule, ty, tm + 1)
+  return new Date(ty, tm + 1, nextDay)
 }
 
 // ─── Category emoji ────────────────────────────────────────────────────────
@@ -265,7 +284,7 @@ export default function Dashboard() {
     })
 
     const upcomingItems = (recurringRes.data || [])
-      .map(r => ({ ...r, days: daysUntil(r.day_of_month), due: nextDueDate(r.day_of_month) }))
+      .map(r => ({ ...r, days: daysUntil(r.day_of_month, r.weekend_rule), due: nextDueDate(r.day_of_month, r.weekend_rule) }))
       .filter(r => r.days <= 14)
       .sort((a, b) => a.days - b.days)
 
