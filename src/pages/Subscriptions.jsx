@@ -477,10 +477,13 @@ export default function Subscriptions() {
                     {urgentFlag && (
                       <span className="text-xs text-red-500 font-semibold flex-shrink-0">{days}d</span>
                     )}
+                    {(s.billing_frequency === 'annual' || s.billing_frequency === 'fixed') && s.next_renewal_date && (
+                      <button onClick={() => renewSub(s)}
+                        className="flex-shrink-0 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 px-2 py-1 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40">
+                        ↻ Renew
+                      </button>
+                    )}
                     <div className="md:opacity-0 md:group-hover:opacity-100 flex items-center gap-2 transition-opacity flex-shrink-0">
-                      {s.billing_frequency === 'annual' && s.next_renewal_date && (
-                        <button onClick={() => renewSub(s)} className="text-xs text-green-600 hover:underline">Renew</button>
-                      )}
                       <button onClick={() => toggleActive(s)}
                         className="text-xs px-2 py-0.5 rounded-full border border-gray-300 dark:border-slate-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-600">
                         {s.is_active ? 'Pause' : 'Resume'}

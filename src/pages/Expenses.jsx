@@ -59,9 +59,9 @@ function MerchantLogo({ description, color, categoryName }) {
   }
   return (
     <img
-      src={`https://logo.clearbit.com/${domain}`}
+      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
       alt=""
-      className="w-8 h-8 rounded-xl flex-shrink-0 object-contain bg-white border border-gray-100"
+      className="w-8 h-8 rounded-xl flex-shrink-0 object-contain bg-white border border-gray-100 p-0.5"
       onError={() => setFailed(true)}
     />
   )
