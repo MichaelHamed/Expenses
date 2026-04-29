@@ -118,7 +118,7 @@ export default function Income() {
   const total = entries.reduce((s, e) => s + Number(e.amount), 0)
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-7xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Income</h2>

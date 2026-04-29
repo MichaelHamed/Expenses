@@ -550,7 +550,7 @@ export default function Import() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-7xl">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Import Bank Statement</h2>
         <p className="text-gray-500 text-sm mt-0.5">Upload a Halifax PDF statement or a CSV exported from your online banking</p>

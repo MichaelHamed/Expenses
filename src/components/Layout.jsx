@@ -145,7 +145,7 @@ export default function Layout({ session }) {
     <div className="min-h-screen bg-gray-50 flex">
 
       {/* ── Sidebar (desktop only) ───────────────────────────── */}
-      <aside className="hidden md:flex w-56 bg-white border-r border-gray-200 flex-col">
+      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col">
         <div className="p-5 border-b border-gray-100">
           <h1 className="text-lg font-bold text-gray-900">💸 Flōw</h1>
           <p className="text-xs text-gray-400 mt-0.5 truncate">{session?.user?.email}</p>

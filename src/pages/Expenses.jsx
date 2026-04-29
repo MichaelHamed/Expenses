@@ -37,11 +37,13 @@ const MERCHANT_DOMAINS = {
 
 function getMerchantDomain(description) {
   if (!description) return null
-  const d = description.toLowerCase().replace(/[^a-z0-9]/g, ' ')
+  const d = description.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim()
   for (const [kw, domain] of Object.entries(MERCHANT_DOMAINS)) {
     if (d.includes(kw)) return domain
   }
-  return null
+  // Fallback: try first meaningful word as a .com domain
+  const word = d.split(/\s+/).find(w => w.length >= 4)
+  return word ? `${word}.com` : null
 }
 
 function MerchantLogo({ description, color, categoryName }) {
@@ -433,7 +435,7 @@ export default function Expenses() {
   const uncategorisedCount = expenses.filter(e => !e.category_id).length
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-7xl">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <div>

@@ -289,7 +289,7 @@ export default function Subscriptions() {
   const maxMonthTotal = Math.max(...months.map(m => m.total), 1)
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
