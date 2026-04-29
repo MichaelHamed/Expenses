@@ -8,6 +8,65 @@ function fmt(amount) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount || 0)
 }
 
+// ── Merchant logo (Clearbit) ──────────────────────────────────────────────────
+
+const MERCHANT_DOMAINS = {
+  amazon: 'amazon.co.uk', tesco: 'tesco.com', sainsbury: 'sainsburys.co.uk',
+  asda: 'asda.com', morrisons: 'morrisons.com', waitrose: 'waitrose.com',
+  lidl: 'lidl.co.uk', aldi: 'aldi.co.uk', marks: 'm-s.com', netflix: 'netflix.com',
+  spotify: 'spotify.com', microsoft: 'microsoft.com', apple: 'apple.com',
+  google: 'google.com', youtube: 'youtube.com', uber: 'uber.com',
+  deliveroo: 'deliveroo.co.uk', justeat: 'just-eat.co.uk',
+  mcdonalds: 'mcdonalds.com', costa: 'costa.co.uk', starbucks: 'starbucks.co.uk',
+  greggs: 'greggs.co.uk', pret: 'pret.co.uk', nandos: 'nandos.co.uk',
+  wagamama: 'wagamama.com', kfc: 'kfc.co.uk', primark: 'primark.com',
+  argos: 'argos.co.uk', currys: 'currys.co.uk', ikea: 'ikea.com',
+  paypal: 'paypal.com', ebay: 'ebay.co.uk', asos: 'asos.com',
+  sky: 'sky.com', vodafone: 'vodafone.co.uk', giffgaff: 'giffgaff.com',
+  nordvpn: 'nordvpn.com', ring: 'ring.com', anthropic: 'anthropic.com',
+  costco: 'costco.co.uk', trainline: 'thetrainline.com', tfl: 'tfl.gov.uk',
+  halfords: 'halfords.com', adobe: 'adobe.com', github: 'github.com',
+  dropbox: 'dropbox.com', notion: 'notion.so', zoom: 'zoom.us',
+  airbnb: 'airbnb.co.uk', booking: 'booking.com', ryanair: 'ryanair.com',
+  easyjet: 'easyjet.com', next: 'next.co.uk', zara: 'zara.com',
+  linkedin: 'linkedin.com', shell: 'shell.co.uk', bp: 'bp.com',
+  halifax: 'halifax.co.uk', monzo: 'monzo.com', paypal: 'paypal.com',
+  wise: 'wise.com', revolut: 'revolut.com', barclays: 'barclays.co.uk',
+  vault: 'vaultapp.co', icloud: 'apple.com', claude: 'anthropic.com',
+}
+
+function getMerchantDomain(description) {
+  if (!description) return null
+  const d = description.toLowerCase().replace(/[^a-z0-9]/g, ' ')
+  for (const [kw, domain] of Object.entries(MERCHANT_DOMAINS)) {
+    if (d.includes(kw)) return domain
+  }
+  return null
+}
+
+function MerchantLogo({ description, color, categoryName }) {
+  const [failed, setFailed] = useState(false)
+  const domain = getMerchantDomain(description)
+  const fallbackInitial = (categoryName || description || '?')[0].toUpperCase()
+
+  if (!domain || failed) {
+    return (
+      <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+        style={{ backgroundColor: color || '#94a3b8' }}>
+        {fallbackInitial}
+      </div>
+    )
+  }
+  return (
+    <img
+      src={`https://logo.clearbit.com/${domain}`}
+      alt=""
+      className="w-8 h-8 rounded-xl flex-shrink-0 object-contain bg-white border border-gray-100"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
@@ -310,6 +369,46 @@ export default function Expenses() {
     URL.revokeObjectURL(url)
   }
 
+  async function exportExcel() {
+    const XLSX = await import('xlsx')
+    const monthLabel = `${MONTHS[month - 1]} ${year}`
+    const fileName = `expenses-${year}-${String(month).padStart(2, '0')}.xlsx`
+
+    // Sheet 1: Expenses
+    const expHeaders = ['Date', 'Description', 'Category', 'Amount (£)', 'Type', 'Notes', 'Source']
+    const expRows = filtered.map(e => [
+      e.date,
+      e.description || '',
+      e.categories?.name || 'Uncategorised',
+      Number(e.amount),
+      e.payment_type || '',
+      e.notes || '',
+      e.source || '',
+    ])
+    const ws1 = XLSX.utils.aoa_to_sheet([expHeaders, ...expRows])
+    ws1['!cols'] = [{ wch: 12 }, { wch: 40 }, { wch: 20 }, { wch: 12 }, { wch: 8 }, { wch: 30 }, { wch: 10 }]
+
+    // Sheet 2: Category summary
+    const catMap = {}
+    filtered.forEach(e => {
+      const cat = e.categories?.name || 'Uncategorised'
+      if (!catMap[cat]) catMap[cat] = { total: 0, count: 0 }
+      catMap[cat].total += Number(e.amount)
+      catMap[cat].count += 1
+    })
+    const sumHeaders = ['Category', `Total — ${monthLabel}`, 'Transactions']
+    const sumRows = Object.entries(catMap)
+      .sort(([, a], [, b]) => b.total - a.total)
+      .map(([cat, { total, count }]) => [cat, Number(total.toFixed(2)), count])
+    const ws2 = XLSX.utils.aoa_to_sheet([sumHeaders, ...sumRows])
+    ws2['!cols'] = [{ wch: 22 }, { wch: 20 }, { wch: 14 }]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws1, 'Expenses')
+    XLSX.utils.book_append_sheet(wb, ws2, 'By Category')
+    XLSX.writeFile(wb, fileName)
+  }
+
   function matchesSub(description) {
     if (!description || !subNames.length) return false
     const desc = description.toLowerCase()
@@ -341,10 +440,16 @@ export default function Expenses() {
             <h2 className="text-2xl font-bold text-gray-900">Expenses</h2>
             <p className="text-gray-500 text-sm mt-0.5">Record and manage your spending</p>
           </div>
-          <button onClick={exportCSV} title="Export to CSV"
-            className="hidden md:block border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-            Export CSV
-          </button>
+          <div className="hidden md:flex gap-2">
+            <button onClick={exportCSV} title="Export to CSV"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+              Export CSV
+            </button>
+            <button onClick={exportExcel} title="Export to Excel"
+              className="border border-green-300 rounded-lg px-3 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors">
+              Export Excel
+            </button>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -359,8 +464,8 @@ export default function Expenses() {
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={exportCSV} title="Export to CSV"
-            className="md:hidden border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+          <button onClick={exportExcel} title="Export to Excel"
+            className="md:hidden border border-green-300 rounded-lg px-3 py-2 text-sm text-green-700 hover:bg-green-50 transition-colors">
             Export
           </button>
         </div>
@@ -465,8 +570,11 @@ export default function Expenses() {
                     <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleSelect(e.id)}
                       onClick={ev => ev.stopPropagation()}
                       className="hidden md:block w-4 h-4 rounded accent-indigo-600 cursor-pointer flex-shrink-0" />
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: e.categories?.color || '#94a3b8' }} />
+                    <MerchantLogo
+                      description={e.description}
+                      color={e.categories?.color}
+                      categoryName={e.categories?.name}
+                    />
                     <div>
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium text-gray-800">{e.description || '—'}</p>
