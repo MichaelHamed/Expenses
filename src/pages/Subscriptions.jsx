@@ -397,6 +397,18 @@ export default function Subscriptions() {
                     {s.amount > 0 ? fmt(s.amount) : '? — check email'}
                   </p>
                   {s.auto_renew && <p className="text-xs text-gray-400 mt-0.5">🔄 Auto-renews</p>}
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
+                    <button
+                      onClick={() => { setEditItem(s); setShowMobileForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                      className="flex-1 text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline text-center">
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => renewSub(s)}
+                      className="flex-1 text-xs text-green-600 dark:text-green-400 font-medium hover:underline text-center">
+                      Renew
+                    </button>
+                  </div>
                 </div>
               )
             })}
