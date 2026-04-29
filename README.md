@@ -1,6 +1,6 @@
-# 🛡️ My Pocket Guard
+# 💸 Flōw
 
-A personal monthly expense tracking web app built with React, Supabase, and Tailwind CSS. Designed for a single user to track spending, import Halifax bank statements, manage recurring payments, track subscriptions, and understand their finances at a glance.
+A personal finance web app built with React, Supabase, and Tailwind CSS. Tracks spending, income, subscriptions, and recurring payments — with bank statement import, budget analytics, and daily email alerts.
 
 Live at: **https://mango-bay-041656c03.4.azurestaticapps.net**
 
@@ -8,30 +8,33 @@ Live at: **https://mango-bay-041656c03.4.azurestaticapps.net**
 
 ## What This App Does
 
-- **Dashboard** — See income, spending, remaining budget, daily allowance, and pay-period progress at a glance
-- **Expenses** — Add, edit, delete, search, filter and export transactions; subscription badges highlight known recurring payments
+- **Dashboard** — Pay-period aware overview: income, spent, remaining budget, daily allowance, category breakdowns, upcoming DDs, calendar widget, and recent transactions
+- **Expenses** — Add, edit, delete, search, filter, and export transactions; merchant logos on every row; subscription badges flag known recurring payments
 - **Income** — Record salary and other income entries
-- **Import** — Upload a Halifax CSV or PDF bank statement and auto-import transactions (with duplicate detection)
-- **Direct Debits** — Manage recurring Direct Debits and Standing Orders (monthly)
-- **Subscriptions** — Track annual and monthly subscriptions with a 12-month spending timeline and upcoming renewal alerts
+- **Import** — Upload Halifax CSV or PDF bank statements; auto-categorises, detects duplicates, tags DDs/SOs
+- **Direct Debits** — Manage recurring Direct Debits and Standing Orders with weekend payment rules
+- **Subscriptions** — Track annual and monthly subscriptions with a 12-month spending timeline, upcoming renewal alerts, and one-click Renew
 - **Analytics** — Pay-period income vs spending charts, savings rate, top merchants, period-over-period comparison
-- **Categories** — Organise spending into groups with optional monthly budget limits
+- **Categories** — Organise spending into groups with monthly budget limits
+- **Email alerts** — Daily email at 8am listing subscriptions and DDs due in the next 7 days
 - **Dark mode** — Toggle between light and dark themes, preference saved in browser
 
 ---
 
 ## Tech Stack
 
-| Tool | What it is | Why it's used |
-|------|-----------|---------------|
-| **React 19** | JavaScript UI framework | Builds the interactive pages and components |
-| **Vite** | Development server & build tool | Runs the app locally and bundles it for deployment |
-| **Tailwind CSS v4** | Utility-first CSS framework | Styles every element without writing separate CSS files |
-| **Supabase** | Cloud database (PostgreSQL) + Auth | Stores all your data securely online with user login |
-| **React Router v7** | Page routing | Handles navigation between pages without full page reloads |
-| **PapaParse** | CSV parser | Reads Halifax bank statement CSV files in the browser |
-| **pdfjs-dist** | PDF parser | Reads Halifax bank statement PDF files in the browser |
-| **Recharts** | Chart library | Draws charts on the dashboard and analytics pages |
+| Tool | Purpose |
+|------|---------|
+| **React 19** | UI framework |
+| **Vite** | Dev server and build tool |
+| **Tailwind CSS v4** | Utility-first styling |
+| **Supabase** | PostgreSQL database + Auth + Edge Functions |
+| **React Router v7** | Client-side routing |
+| **PapaParse** | Halifax CSV parsing |
+| **pdfjs-dist** | Halifax PDF parsing |
+| **Recharts** | Dashboard and analytics charts |
+| **xlsx (SheetJS)** | Excel export (loaded on demand) |
+| **Resend** | Transactional email for renewal alerts |
 
 ---
 
@@ -41,91 +44,75 @@ Live at: **https://mango-bay-041656c03.4.azurestaticapps.net**
 Expenses/
 ├── src/
 │   ├── pages/
-│   │   ├── Dashboard.jsx      # Main overview page (pay-period aware, calendar widget)
-│   │   ├── Expenses.jsx       # Add/edit/delete/search expenses (+ subscription badges)
-│   │   ├── Income.jsx         # Record income entries
-│   │   ├── Import.jsx         # Upload & import bank statement (CSV or PDF)
-│   │   ├── Recurring.jsx      # Manage Direct Debits & Standing Orders
-│   │   ├── Subscriptions.jsx  # Track annual/monthly subscriptions + year timeline
-│   │   ├── Analytics.jsx      # Charts, top merchants, pay-period comparison
-│   │   ├── Categories.jsx     # Manage spending categories + budgets
-│   │   └── Login.jsx          # Microsoft SSO + email login screen
+│   │   ├── Dashboard.jsx      # Pay-period overview, calendar, upcoming DDs
+│   │   ├── Expenses.jsx       # Transaction list with logos, badges, Excel export
+│   │   ├── Income.jsx         # Income entries
+│   │   ├── Import.jsx         # CSV + PDF bank statement import
+│   │   ├── Recurring.jsx      # Direct Debits & Standing Orders + weekend rules
+│   │   ├── Subscriptions.jsx  # Annual/monthly subs + year timeline + Renew
+│   │   ├── Analytics.jsx      # Pay-period charts and comparisons
+│   │   ├── Categories.jsx     # Category management with budget limits
+│   │   └── Login.jsx          # Microsoft SSO + email login
 │   ├── components/
-│   │   └── Layout.jsx         # Sidebar (desktop) + bottom nav (mobile)
+│   │   └── Layout.jsx         # Sidebar (desktop) + bottom nav (mobile) + quick-add drawer
 │   ├── lib/
-│   │   ├── supabase.js        # Supabase client (connects to your database)
-│   │   └── syncRecurring.js   # Auto-adds DD/SO expenses to recurring list
-│   ├── App.jsx                # Route definitions + email allowlist guard
-│   ├── main.jsx               # App entry point
+│   │   ├── supabase.js        # Supabase client
+│   │   └── syncRecurring.js   # Auto-syncs DD/SO expenses to recurring list
+│   ├── App.jsx                # Routes + email allowlist guard
+│   ├── main.jsx               # Entry point
 │   └── index.css              # Global styles + dark mode overrides
+├── supabase/
+│   └── functions/
+│       └── renewal-alerts/
+│           └── index.ts       # Edge Function: daily email for upcoming renewals
 ├── public/
-│   ├── manifest.json          # PWA manifest (enables "Add to Home Screen")
-│   ├── icon-192.png           # App icon (small)
-│   └── icon-512.png           # App icon (large)
-├── supabase-schema.sql        # Run once: creates main tables
-├── supabase-recurring.sql     # Run once: creates recurring_payments table
-├── supabase-add-payment-type.sql  # Run once: adds payment_type column
-├── supabase-features.sql      # Run once: adds budget + notes columns
-├── staticwebapp.config.json   # Azure Static Apps routing + security headers
-├── vite.config.js             # Vite + Tailwind plugin config
-├── package.json               # Project dependencies and scripts
-└── .gitignore                 # Files excluded from git (CSV, .env, etc.)
+│   ├── manifest.json          # PWA manifest
+│   ├── icon-192.png
+│   └── icon-512.png
+├── supabase-schema.sql
+├── supabase-recurring.sql
+├── supabase-add-payment-type.sql
+├── supabase-features.sql
+├── staticwebapp.config.json   # Azure routing + security headers (CSP, HSTS, etc.)
+├── vite.config.js
+└── package.json
 ```
 
 ---
 
 ## How to Run Locally
 
-### Prerequisites
-- Node.js v18 or higher (check with `node --version`)
-- A Supabase account and project
-
-### Steps
-
-1. **Clone or open the project folder** in VS Code
-
-2. **Install dependencies**:
+1. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Create your environment file** — create `.env` in the project root:
+2. **Create `.env`** in the project root:
    ```
    VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-key-here
    ```
-   > Get these from: Supabase Dashboard → Your Project → Settings → API
 
-4. **Start the development server**:
+3. **Start the dev server**
    ```bash
    npm run dev
    ```
-   > Open your browser at `http://localhost:5173`
-
-5. **To stop the server**, press `Ctrl + C`
+   Open `http://localhost:5173`
 
 ---
 
 ## Database Setup (Supabase)
 
-Run these SQL snippets **once** in the Supabase SQL Editor:
+Run these in the **Supabase SQL Editor** in order:
 
-**How to run SQL in Supabase:**
-1. Go to [supabase.com](https://supabase.com) → Your Project
-2. Click **SQL Editor** in the left sidebar → **New Query**
-3. Paste the SQL → Click **Run**
+| File | Creates |
+|------|---------|
+| `supabase-schema.sql` | `categories`, `expenses`, `income_entries` + RLS |
+| `supabase-recurring.sql` | `recurring_payments` table |
+| `supabase-add-payment-type.sql` | `payment_type` column on expenses |
+| `supabase-features.sql` | `budget` on categories, `notes` on expenses |
 
-### Core tables (run in order)
-
-| File | What it creates |
-|------|----------------|
-| `supabase-schema.sql` | `categories`, `expenses`, `income_entries` tables + RLS |
-| `supabase-recurring.sql` | `recurring_payments` table for Direct Debits & Standing Orders |
-| `supabase-add-payment-type.sql` | Adds `payment_type` column to expenses (DD / SO / null) |
-| `supabase-features.sql` | Adds `budget` to categories and `notes` to expenses |
-
-### Subscriptions table (newer — run separately)
-
+### Subscriptions table
 ```sql
 create table if not exists subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -141,162 +128,167 @@ create table if not exists subscriptions (
   notes text,
   created_at timestamptz default now()
 );
-
 alter table subscriptions enable row level security;
-
 create policy "Users manage own subscriptions"
   on subscriptions for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 ```
 
-> All tables use **Row Level Security (RLS)** — each user can only ever see their own data.
+### Weekend rule column (Direct Debits)
+```sql
+alter table recurring_payments
+  add column if not exists weekend_rule text default 'none';
+```
+
+### Email alerts CRON (run after deploying the Edge Function)
+```sql
+-- Enable extensions first
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+-- Schedule daily check at 8am
+select cron.schedule(
+  'renewal-alerts-8am',
+  '0 8 * * *',
+  $$
+  select net.http_post(
+    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/renewal-alerts',
+    headers := '{"Authorization": "Bearer YOUR_ANON_KEY", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
+);
+```
 
 ---
 
 ## Key Features Explained
 
 ### Dashboard
-
-- Operates on **pay periods** (payday = 28th, adjusted for weekends) rather than calendar months
-- Shows income, spent, remaining, and daily budget for the current pay period
-- **Category breakdown** with budget progress bars
-- **Income utilisation gauge** — visual showing what % of income has been spent
-- **Upcoming Direct Debits** — shows payments due in the next 14 days with urgency bars
-- **Calendar widget** — shows days with spending, colour-coded by amount
+- Operates on **pay periods** (payday = 28th, adjusted for weekends)
+- Shows income, spent, remaining, and daily allowance for the current period
+- **Category breakdown** with budget progress bars (amber = >80%, red = over budget)
+- **Income utilisation gauge** — half-circle chart showing % of income spent
+- **Upcoming Direct Debits** — payments due in the next 14 days with urgency bars
+- **Calendar widget** — days colour-coded by spend amount
 - **Recent transactions** with category emoji icons
-- Clean single-accent design (indigo only for meaning, not decoration)
 
-### Subscriptions
+### Expenses
+- **Merchant logos** — Google Favicon API shows brand icons next to each transaction; falls back to a coloured initial if no logo is found
+- **Subscription badge** — `📦 Sub` tag on any transaction whose description matches a known subscription or DD name
+- **Autocomplete** — description field suggests from last 500 expenses; fills amount, category, and type automatically
+- **Export CSV** — downloads current filtered view as CSV
+- **Export Excel** — two-sheet XLSX workbook: all expenses + category summary totals
 
-A dedicated page for tracking annual and monthly subscriptions (separate from Direct Debits):
+### Import (Halifax Bank Statements)
 
-- **12-month timeline** — bar chart showing total outgoing per month for the next year, including both subscriptions and DDs. Hover a bar to see what's due that month
-- **Upcoming renewals** — cards for annual subscriptions due in the next 90 days, coloured by urgency (red = within 7 days, amber = within 30 days)
-- **Summary cards** — monthly equivalent cost, annual total, count of renewals due in 30 days
-- **Direct Debits section** — read-only view of your DDs/SOs from the Recurring page, included in totals
-- **Subscription badge on expenses** — any expense whose description matches a subscription or DD name shows a `📦 Sub` badge on the Expenses page
-- Supports billing frequencies: Monthly, Annual, Fixed term
-- Fields: name, category, frequency, amount, renewal date or day of month, auto-renew flag, notes
-- **"Load my subscriptions"** button — one-click seed with your known subscriptions (shown when table is empty)
-
-### Importing a Halifax Bank Statement
-
-The Import page accepts both **CSV** and **PDF** formats:
-
-**CSV (recommended):**
-1. Log into Halifax online banking
-2. Go to **Statements** → select the month → **Download** → choose **CSV**
-3. In My Pocket Guard, go to **Import** → upload the CSV
+**CSV:**
+1. Halifax online banking → Statements → Download → CSV
+2. Upload via Import page
 
 **PDF:**
 1. Download a statement PDF from Halifax
-2. Upload via the Import page — the app extracts transaction data from the PDF layout using column-position matching
+2. Upload — the app extracts text by column position (date, description, type, amounts)
 
-**What happens after upload:**
-- **Duplicate detection** — rows already in your records are flagged with a yellow "DUPLICATE" badge and unticked automatically
-- **Auto-categorisation** — descriptions matched against a keyword list and against your previously categorised transactions (learned memory)
-- **Money In** — salary, deposits, and transfers in shown separately as income to add
-- **DD / SO detection** — tagged automatically from the bank's Type column and synced to your Direct Debits list
-
-### Pay-Period Logic
-
-The app treats finances in **pay periods**, not calendar months. The payday rule:
-
-- Payday is the **28th of each month**
-- If the 28th falls on a **Saturday**, payday moves to the 27th
-- If the 28th falls on a **Sunday**, payday moves to the 26th
-
-The current pay period runs from the last payday to the day before the next payday. Both the Dashboard and Analytics use this logic consistently. The `getActualPayday(year, month)` helper in each page handles the weekend adjustment.
-
-### Analytics
-
-- **Annual chart** — income vs spending bar chart per pay period for the year
-- **Savings rate** — line chart showing % of income saved each period
-- **Highlights** — best and worst savings periods of the year
-- **Top merchants** — ranked list of where your money goes
-- **Period-over-Period** — spending per category for the last 3 pay periods with trend arrows and period-start dates as column headers
+**After upload:**
+- **Duplicate detection** — normalises descriptions (strips punctuation) so PDF and CSV imports both match existing records
+- **Auto-categorisation** — keyword matching + learned memory from past imports
+- **Money In** — salary/transfers shown separately as income candidates
+- **DD/SO detection** — tagged from bank's Type column and synced to Direct Debits
 
 ### Direct Debits & Standing Orders
+- Add/edit/delete recurring payments with type, amount, day of month, category
+- **Weekend rule** per payment: pay on exact day, Friday before, or Monday after
+- Dashboard "upcoming" section respects the weekend rule when calculating days until payment
+- Payments tagged as DD or SO on the Expenses page are automatically synced here
 
-When an expense is tagged as DD or SO (during import or when added manually), it is automatically synced to the **Direct Debits** page. This page shows:
-- All recurring payments with type, amount, day of month, and category
-- Summary totals for DDs and SOs separately
-- Dashboard shows upcoming payments due within the next 14 days
+### Subscriptions
+- Separate from Direct Debits — tracks Netflix, Microsoft 365, annual memberships, etc.
+- **12-month timeline** bar chart — monthly outgoing for the next year across all subs + DDs
+- **Upcoming renewals** — cards for non-monthly subs due in the next 90 days; colour-coded by urgency
+- **↻ Renew** button — always visible on annual/fixed subscriptions; advances renewal date by 1 year instantly (supports early renewal)
+- **Edit/Renew directly from upcoming cards** — no need to scroll to the list
+- Billing frequencies: Monthly, Annual, Fixed term
+- "Load my subscriptions" seed button — one click pre-loads known subscriptions when the table is empty
 
-### Expense Subscription Badge
+### Email Alerts (Supabase Edge Function)
+A Deno function runs daily at 8am and sends an HTML email listing:
+- Subscriptions with a renewal date in the next 7 days
+- Direct Debits/Standing Orders due in the next 7 days
 
-On the Expenses page, any transaction whose description contains a word matching a known subscription or recurring payment name shows a `📦 Sub` badge. This makes it easy to verify that a subscription charged and to spot unrecognised charges.
+**Setup (one-time):**
+```bash
+# Install Supabase CLI
+brew install supabase/tap/supabase
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
 
-### Budget Targets
+# Set secrets
+supabase secrets set RESEND_API_KEY=re_yourKeyHere
+supabase secrets set ALERT_EMAIL=you@gmail.com
 
-In **Categories**, set a monthly budget limit per category (e.g. Groceries: £300). On the Dashboard:
-- Normal bar = within budget
-- Amber = over 80% of budget
-- Red = over budget
+# Deploy the function
+supabase functions deploy renewal-alerts
+```
+Then run the CRON SQL above in the Supabase SQL Editor.
 
-### Expense Autocomplete
+> **Note:** Resend free tier only sends to your account's own email. To send to any address, verify a domain in Resend → Domains.
 
-When manually adding an expense, the description field shows suggestions from your past 500 expenses. Selecting one fills in the description, amount, category, and payment type — saving time for regular transactions.
+### Pay-Period Logic
+Payday is the **28th of each month**, adjusted for weekends:
+- 28th on Saturday → payday is the 27th (Friday)
+- 28th on Sunday → payday is the 26th (Friday)
 
-### Dark Mode
+The current pay period runs from last payday to the day before next payday. Dashboard and Analytics both use this logic via `getActualPayday(year, month)`.
 
-Click the moon/sun icon at the bottom of the sidebar (desktop) or in the More drawer (mobile). Preference saved in `localStorage` and persists between sessions.
+### Analytics
+- **Annual chart** — income vs spending per pay period for the year
+- **Savings rate** — line chart showing % of income saved each period
+- **Highlights** — best and worst savings periods
+- **Top merchants** — ranked spend list
+- **Period-over-Period** — spending per category for the last 3 pay periods with trend arrows
+
+### Merchant Logos
+On the Expenses page, each transaction row shows a small brand icon fetched from Google's Favicon API (`google.com/s2/favicons?domain=X&sz=64`). 40+ major UK/global merchants are mapped by keyword. For unrecognised merchants, the first meaningful word of the description is tried as a `.com` domain. Falls back to a coloured initial square if no logo is found.
 
 ---
 
-## Mobile / Tablet
+## Mobile / PWA
 
-The app is fully responsive. On mobile:
+The app is fully responsive and installable as a PWA.
 
-- **Bottom navigation bar** — 📊 Dashboard | ➕ Quick add | ☰ More
-- **Floating + button** — opens a quick-add expense drawer optimised for one-handed use
-- **All form+list pages** (Expenses, Income, Recurring, Subscriptions, Categories) follow the same mobile pattern:
-  - List shows by default, full-width
-  - **"+ Add" button** in the page header reveals the add form
-  - Tapping **Edit** on a row reveals the edit form
-  - **× button** closes the form and returns to the list
-- **Subscriptions year timeline** scrolls horizontally on mobile
+**Mobile layout:**
+- Bottom navigation: 📊 Dashboard | ➕ Quick add | ☰ More
+- Floating + button opens a quick-add expense drawer
+- All form+list pages follow the same mobile pattern: list by default, form revealed by "+ Add" / "Edit" buttons
 
-### Install on Android (PWA)
+**Install on Android:**
+1. Open Chrome → go to the live URL
+2. Tap ⋮ → Add to Home Screen
 
-1. Open **Chrome** on your phone
-2. Go to `https://mango-bay-041656c03.4.azurestaticapps.net`
-3. Tap the **three dots** menu → **Add to Home Screen**
-4. The app installs and opens full-screen like a native app
+**Install on iOS:**
+1. Open Safari → go to the live URL
+2. Tap Share → Add to Home Screen
 
 ---
 
-## Login / Authentication
+## Login & Security
 
-Sign in with your **Microsoft account** (Hotmail, Outlook, or work account) — the primary login method. An email/password fallback is also available.
+Sign in with **Microsoft account** (primary) or email/password (fallback).
 
-**Access restriction:** Only `mfawehinmi@hotmail.com` can use the app. Any other Microsoft account is signed out immediately on login — enforced in `App.jsx` on both session load and auth state change.
-
----
-
-## Security
-
-- **Row Level Security** on all Supabase tables — database enforces you can only read/write your own rows
-- **No service_role key** in the client — only the public anon key is used
-- **Email allowlist** in `App.jsx` — unauthorised users are signed out client-side even if they authenticate with Microsoft
-- **Security headers** on every response (via `staticwebapp.config.json`):
-  - `Content-Security-Policy` — blocks scripts from unknown sources
-  - `X-Frame-Options: DENY` — prevents clickjacking
-  - `X-Content-Type-Options: nosniff` — blocks MIME sniffing
-  - `Strict-Transport-Security` — forces HTTPS
-  - `Referrer-Policy` — prevents URL leakage
-  - `Permissions-Policy` — disables camera, microphone, geolocation
-- **Input sanitisation** — descriptions capped at 500 characters, notes at 1,000
-- **`.env` and `*.csv` excluded from git** — keys and bank data never committed
+- **Allowlist**: only `mfawehinmi@hotmail.com` can access the app — enforced in `App.jsx`
+- **Row Level Security** on all Supabase tables
+- **Security headers** via `staticwebapp.config.json`: CSP, HSTS, X-Frame-Options, no MIME sniffing
+- **Input sanitisation**: descriptions capped at 500 chars, notes at 1,000 chars
+- **No service_role key** in the browser — anon key only
 
 ---
 
 ## Deployment (Azure Static Apps)
 
-The app is hosted on Azure Static Web Apps (free tier, West Europe region).
+Hosted on Azure Static Web Apps (free tier, West Europe).
 
-**To build and deploy:**
 ```bash
 rm -rf ~/.swa/deploy/ && \
 npm run build && \
@@ -308,11 +300,12 @@ npx @azure/static-web-apps-cli@2.0.4 deploy dist \
   --env production
 ```
 
-> **Important:** Use `@azure/static-web-apps-cli@2.0.4` specifically — v2.0.9 has a bug where the macOS deployment binary crashes silently. Always clear `~/.swa/deploy/` before deploying to avoid using a stale cached binary.
+> **Important:** Use `@azure/static-web-apps-cli@2.0.4` — v2.0.9 crashes silently on macOS. Always clear `~/.swa/deploy/` before deploying.
 
-> Requires Azure CLI (`az`) installed and logged in (`az login`).
-
-The `staticwebapp.config.json` file handles page routing (so refreshing `/subscriptions` doesn't return a 404) and sets all security response headers.
+Then commit and push:
+```bash
+git add -A && git commit -m "message" && git push origin main
+```
 
 ---
 
@@ -320,32 +313,25 @@ The `staticwebapp.config.json` file handles page routing (so refreshing `/subscr
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase public anon key |
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase public anon key |
 
-> Never commit `.env` to git.
+Supabase Edge Function secrets (set via CLI):
 
----
-
-## What's Excluded from Git
-
-| Excluded | Reason |
-|----------|--------|
-| `node_modules/` | Too large, regenerated with `npm install` |
-| `dist/` | Generated by the build, not source code |
-| `.env` | Contains secret API keys |
-| `*.csv` | Bank statement files contain personal financial data |
-| `.claude/` | AI assistant session memory |
+| Secret | Description |
+|--------|-------------|
+| `RESEND_API_KEY` | Resend.com API key for email alerts |
+| `ALERT_EMAIL` | Email address to send renewal alerts to |
 
 ---
 
 ## Halifax CSV Format
 
-The app expects this exact header row:
+Expected header:
 ```
 Date,Description,Type,Money In (£),Money Out (£),Balance (£)
 ```
-Dates are in `dd MMM yy` format (e.g. `02 Mar 26`).
+Dates in `dd MMM yy` format (e.g. `02 Mar 26`).
 
 | Code | Meaning |
 |------|---------|
@@ -353,68 +339,23 @@ Dates are in `dd MMM yy` format (e.g. `02 Mar 26`).
 | `SO` | Standing Order |
 | `BGC` | Bank Giro Credit (salary) |
 | `TFR` | Transfer |
-| `CSH` | Cash deposit |
-| `DEB` | Debit card payment |
+| `DEB` | Debit card |
 | `FPO` | Faster Payment Out |
 | `BP` | Bill Payment |
 
 ## Halifax PDF Format
 
-PDF statements are parsed by extracting text items and grouping them into rows by y-coordinate (3pt tolerance). The parser finds the header row containing `Date`, `Description`, `Type`, then maps each subsequent row's values to columns by x-position proximity (within 60pt). This handles multi-word descriptions that span multiple text items in the PDF.
+Text items are extracted and grouped into rows by y-coordinate (3pt tolerance). The parser finds the header row containing `Date`, `Description`, `Type`, then maps each row's values to columns by x-position (within 60pt). Descriptions that span multiple text items are joined. Duplicate detection normalises both PDF and CSV descriptions (strips punctuation, collapses whitespace) before comparing.
 
 ---
 
-## Understanding the Code (for beginners)
+## What's Excluded from Git
 
-### What is a `.jsx` file?
-JSX is JavaScript that looks like HTML. React uses it to describe what the page should look like. Vite converts it to regular JavaScript when you run `npm run dev`.
-
-### What is `useState`?
-`useState` is how React remembers values on a page. When the value changes, the page re-renders automatically:
-```jsx
-const [count, setCount] = useState(0)  // count starts at 0
-setCount(5)  // now count is 5, page updates
-```
-
-### What is `useEffect`?
-`useEffect` runs code when something changes (like loading data when the page opens):
-```jsx
-useEffect(() => {
-  fetchExpenses()  // runs whenever month or year changes
-}, [month, year])
-```
-
-### What is Supabase?
-Supabase is a cloud database. Instead of building your own server, Supabase provides one. `supabase.from('expenses').select('*')` is equivalent to `SELECT * FROM expenses` in SQL.
-
-### What is `async/await`?
-Fetching data from the internet takes time. `async/await` tells JavaScript to wait for the result:
-```jsx
-async function loadData() {
-  const { data } = await supabase.from('expenses').select('*')
-  // data is now available here
-}
-```
-
-### What does Tailwind do?
-Instead of separate CSS files, Tailwind uses short class names directly in JSX:
-```jsx
-<div className="bg-white rounded-2xl p-6">...</div>
-// equivalent to: background: white; border-radius: 16px; padding: 24px;
-```
-
-### Mobile-first pattern
-All pages with a form + list layout follow this pattern:
-```jsx
-// Outer grid — 1 column on mobile, 3 columns on desktop
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-  // Form — hidden on mobile unless showMobileForm or editItem is true
-  <div className={`col-span-1 ... ${showMobileForm || editItem ? 'block' : 'hidden md:block'}`}>
-    ...form...
-  </div>
-  // List — hidden on mobile when form is showing
-  <div className={`md:col-span-2 ... ${showMobileForm || editItem ? 'hidden md:block' : 'block'}`}>
-    ...list...
-  </div>
-</div>
-```
+| Excluded | Reason |
+|----------|--------|
+| `node_modules/` | Regenerated by `npm install` |
+| `dist/` | Generated by build |
+| `.env` | Contains secret API keys |
+| `*.csv` | Bank statement data |
+| `.claude/` | AI session memory |
+| `supabase/.temp/` | Supabase CLI temp files |
