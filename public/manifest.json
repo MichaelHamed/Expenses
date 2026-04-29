@@ -1,6 +1,6 @@
 {
-  "name": "My Pocket Guard",
-  "short_name": "Pocket Guard",
+  "name": "Flōw",
+  "short_name": "Flōw",
   "description": "Personal expense and budget tracker",
   "start_url": "/",
   "display": "standalone",

@@ -147,7 +147,7 @@ export default function Layout({ session }) {
       {/* ── Sidebar (desktop only) ───────────────────────────── */}
       <aside className="hidden md:flex w-56 bg-white border-r border-gray-200 flex-col">
         <div className="p-5 border-b border-gray-100">
-          <h1 className="text-lg font-bold text-gray-900">🛡️ My Pocket Guard</h1>
+          <h1 className="text-lg font-bold text-gray-900">💸 Flōw</h1>
           <p className="text-xs text-gray-400 mt-0.5 truncate">{session?.user?.email}</p>
         </div>
         <nav className="flex-1 p-3 space-y-1">
