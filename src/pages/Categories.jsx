@@ -52,13 +52,13 @@ function CategoryForm({ onSaved, editItem, onCancel }) {
         <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
         <input type="text" value={form.name} onChange={e => set('name', e.target.value)} required
           placeholder="e.g. Food & Drink"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">Monthly Budget (£) <span className="text-gray-400 font-normal">optional</span></label>
         <input type="number" step="1" min="0" value={form.budget} onChange={e => set('budget', e.target.value)}
           placeholder="e.g. 300"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-2">Colour</label>
@@ -75,7 +75,7 @@ function CategoryForm({ onSaved, editItem, onCancel }) {
       {error && <p className="text-red-600 text-xs">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={saving}
-          className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 bg-violet-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50">
           {saving ? 'Saving...' : editItem ? 'Update' : 'Add Category'}
         </button>
         {editItem && (
@@ -128,7 +128,7 @@ export default function Categories() {
           <p className="text-gray-500 text-sm mt-0.5">Organise your expenses into groups</p>
         </div>
         <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
-          className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+          className="md:hidden px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
           + Add
         </button>
       </div>
@@ -152,7 +152,7 @@ export default function Categories() {
             <h3 className="font-semibold text-gray-900">Your categories</h3>
             {categories.length === 0 && !loading && (
               <button onClick={seedDefaults} disabled={seeding}
-                className="text-xs text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 disabled:opacity-50">
+                className="text-xs text-violet-600 border border-violet-200 rounded-lg px-3 py-1.5 hover:bg-violet-50 disabled:opacity-50">
                 {seeding ? 'Adding...' : '+ Add defaults'}
               </button>
             )}
@@ -178,7 +178,7 @@ export default function Categories() {
                     </div>
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-opacity">
-                    <button onClick={() => { setEditItem(c); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
+                    <button onClick={() => { setEditItem(c); setShowMobileForm(true) }} className="text-xs text-violet-600 hover:underline">Edit</button>
                     <button onClick={() => handleDelete(c.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                   </div>
                 </div>

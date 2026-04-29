@@ -143,13 +143,13 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
           <input type="date" value={form.date} onChange={e => set('date', e.target.value)} required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Amount (£)</label>
           <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required
             placeholder="0.00"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
         </div>
       </div>
       <div className="relative">
@@ -162,7 +162,7 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           placeholder="e.g. Tesco weekly shop"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
           autoComplete="off"
         />
         {showSuggestions && filteredSuggestions.length > 0 && (
@@ -170,7 +170,7 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
             {filteredSuggestions.map((s, i) => (
               <li key={i}
                 onMouseDown={() => applySuggestion(s)}
-                className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-indigo-50 border-b border-gray-50 last:border-0">
+                className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-violet-50 border-b border-gray-50 last:border-0">
                 <div className="min-w-0">
                   <p className="font-medium text-gray-800 truncate">{s.description}</p>
                   <p className="text-xs text-gray-400">{s.categoryName || 'Uncategorised'}</p>
@@ -186,7 +186,7 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
         <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
           <option value="">— Uncategorised —</option>
           {categories.map(c => (
             <option key={c.id} value={c.id}>{c.name}</option>
@@ -202,7 +202,7 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${form.payment_type === val
                 ? val === 'DD' ? 'bg-red-500 text-white border-red-500'
                 : val === 'SO' ? 'bg-amber-500 text-white border-amber-500'
-                : 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-violet-600 text-white border-violet-600'
                 : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
               {label}
             </button>
@@ -218,12 +218,12 @@ function ExpenseForm({ categories, suggestions, onSaved, editItem, onCancel }) {
         <label className="block text-xs font-medium text-gray-600 mb-1">Notes <span className="text-gray-400 font-normal">optional</span></label>
         <textarea value={form.notes} onChange={e => set('notes', e.target.value)}
           rows={2} placeholder="e.g. Birthday dinner, or why this was higher than usual"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
       </div>
       {error && <p className="text-red-600 text-xs">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={saving}
-          className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 bg-violet-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50">
           {saving ? 'Saving...' : editItem ? 'Update' : 'Add Expense'}
         </button>
         {editItem && (
@@ -455,13 +455,13 @@ export default function Expenses() {
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search transactions..."
-            className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
           <select value={month} onChange={e => setMonth(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
             {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
           </select>
           <select value={year} onChange={e => setYear(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <button onClick={exportExcel} title="Export to Excel"
@@ -492,7 +492,7 @@ export default function Expenses() {
           <div className="flex flex-wrap gap-2 mb-4">
             <button
               onClick={() => { setFilterCategory('all'); setSelected(new Set()) }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterCategory === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterCategory === 'all' ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               All ({expenses.length})
             </button>
             <button
@@ -519,7 +519,7 @@ export default function Expenses() {
             <div className="flex items-center gap-3">
               {filtered.length > 0 && (
                 <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                  className="hidden md:block w-4 h-4 rounded accent-indigo-600 cursor-pointer" title="Select all visible" />
+                  className="hidden md:block w-4 h-4 rounded accent-violet-600 cursor-pointer" title="Select all visible" />
               )}
               <h3 className="font-semibold text-gray-900">
                 {filterCategory === 'all' ? `${MONTHS[month - 1]} ${year}` :
@@ -534,7 +534,7 @@ export default function Expenses() {
                   <select
                     defaultValue=""
                     onChange={e => { handleBulkCategory(e.target.value); e.target.value = '' }}
-                    className="border border-indigo-300 bg-indigo-50 text-indigo-700 rounded-lg px-2 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    className="border border-violet-300 bg-violet-50 text-violet-700 rounded-lg px-2 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
                   >
                     <option value="" disabled>Set category…</option>
                     <option value="">— Remove category —</option>
@@ -563,13 +563,13 @@ export default function Expenses() {
             <div className="space-y-1">
               {filtered.map(e => (
                 <div key={e.id}
-                  className={`flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 group cursor-pointer ${selected.has(e.id) ? 'bg-indigo-50' : ''}`}
+                  className={`flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 group cursor-pointer ${selected.has(e.id) ? 'bg-violet-50' : ''}`}
                   onClick={() => toggleSelect(e.id)}
                 >
                   <div className="flex items-center gap-3">
                     <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleSelect(e.id)}
                       onClick={ev => ev.stopPropagation()}
-                      className="hidden md:block w-4 h-4 rounded accent-indigo-600 cursor-pointer flex-shrink-0" />
+                      className="hidden md:block w-4 h-4 rounded accent-violet-600 cursor-pointer flex-shrink-0" />
                     <MerchantLogo
                       description={e.description}
                       color={e.categories?.color}
@@ -580,19 +580,19 @@ export default function Expenses() {
                         <p className="text-sm font-medium text-gray-800">{e.description || '—'}</p>
                         {e.payment_type === 'DD' && <span className="text-xs font-bold text-white bg-red-400 px-1.5 py-0.5 rounded">DD · {new Date(e.date + 'T12:00:00').getDate()}</span>}
                         {e.payment_type === 'SO' && <span className="text-xs font-bold text-white bg-amber-400 px-1.5 py-0.5 rounded">SO · {new Date(e.date + 'T12:00:00').getDate()}</span>}
-                        {matchesSub(e.description) && <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100" title="Matches a subscription">📦 Sub</span>}
+                        {matchesSub(e.description) && <span className="text-xs font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100" title="Matches a subscription">📦 Sub</span>}
                       </div>
                       <p className="text-xs text-gray-400">
                         {e.categories?.name || 'Uncategorised'} · {new Date(e.date).toLocaleDateString('en-GB')}
                         {e.source === 'import' && <span className="ml-1 text-gray-300">(imported)</span>}
                       </p>
-                      {e.notes && <p className="text-xs text-indigo-400 italic mt-0.5">{e.notes}</p>}
+                      {e.notes && <p className="text-xs text-violet-400 italic mt-0.5">{e.notes}</p>}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1" onClick={ev => ev.stopPropagation()}>
                     <span className="text-sm font-semibold text-gray-800">{fmt(e.amount)}</span>
                     <div className="flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setEditItem(e)} className="text-xs text-indigo-600 hover:underline">Edit</button>
+                      <button onClick={() => setEditItem(e)} className="text-xs text-violet-600 hover:underline">Edit</button>
                       <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 hover:underline">Del</button>
                     </div>
                   </div>

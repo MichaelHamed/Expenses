@@ -560,13 +560,13 @@ export default function Import() {
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
         <h3 className="font-semibold text-gray-900 mb-1">Supported formats</h3>
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-medium">Halifax PDF ✓</span>
+          <span className="text-xs bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">Halifax PDF ✓</span>
           <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Halifax CSV</span>
           <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Barclays</span>
           <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">HSBC</span>
           <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Lloyds · NatWest · Monzo · Starling</span>
         </div>
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+        <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:border-violet-400 hover:bg-violet-50 transition-colors">
           <span className="text-3xl mb-2">📂</span>
           <span className="text-sm font-medium text-gray-700">Click to choose a PDF or CSV file</span>
           <span className="text-xs text-gray-400 mt-1">Halifax PDF statements are imported directly · Other banks use CSV export</span>
@@ -578,7 +578,7 @@ export default function Import() {
             Go to <a href="/categories" className="underline font-medium">Categories</a> and click <strong>+ Add defaults</strong> first.
           </p>
         )}
-        {checking && <p className="text-indigo-600 text-sm mt-3 bg-indigo-50 px-3 py-2 rounded-lg">Checking for duplicates...</p>}
+        {checking && <p className="text-violet-600 text-sm mt-3 bg-violet-50 px-3 py-2 rounded-lg">Checking for duplicates...</p>}
         {error && <p className="text-red-600 text-sm mt-3 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
         {saved && (
           <p className="text-green-600 text-sm mt-3 bg-green-50 px-3 py-2 rounded-lg">
@@ -603,7 +603,7 @@ export default function Import() {
             </div>
             <div className="flex items-center gap-3">
               <select onChange={e => setAllCategory(e.target.value)}
-                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500">
                 <option value="">Set all category...</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -644,7 +644,7 @@ export default function Import() {
                     </td>
                     <td className="py-2 pr-3">
                       <select value={r.category_id} onChange={e => setCategory(i, e.target.value)}
-                        className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                        className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-violet-400">
                         <option value="">Uncategorised</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
@@ -658,7 +658,7 @@ export default function Import() {
 
           <div className="mt-4 flex justify-end">
             <button onClick={handleSave} disabled={importing || includedCount === 0}
-              className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+              className="bg-violet-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50">
               {importing ? 'Importing...' : `Import ${includedCount} expenses`}
             </button>
           </div>

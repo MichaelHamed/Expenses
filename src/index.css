@@ -41,7 +41,7 @@ html.dark textarea {
 }
 
 /* Coloured tint backgrounds */
-html.dark .bg-indigo-50  { background-color: #1e1b4b; }
+html.dark .bg-violet-50  { background-color: #1e1b4b; }
 html.dark .bg-green-50   { background-color: #052e16; }
 html.dark .bg-amber-50   { background-color: #1c1009; }
 html.dark .bg-red-50     { background-color: #1c0a0a; }

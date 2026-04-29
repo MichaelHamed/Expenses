@@ -69,7 +69,7 @@ export default function Login() {
         {!showEmail ? (
           <button
             onClick={() => setShowEmail(true)}
-            className="w-full text-sm text-gray-500 hover:text-indigo-600 text-center hover:underline">
+            className="w-full text-sm text-gray-500 hover:text-violet-600 text-center hover:underline">
             Sign in with email instead
           </button>
         ) : (
@@ -77,26 +77,26 @@ export default function Login() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="you@example.com" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="••••••••" />
             </div>
             {error && <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
             {message && <p className="text-green-600 text-sm bg-green-50 px-3 py-2 rounded-lg">{message}</p>}
             <button type="submit" disabled={loading}
-              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              className="w-full bg-violet-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors">
               {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
             <p className="text-center text-sm text-gray-500">
               {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button type="button"
                 onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}
-                className="text-indigo-600 font-medium hover:underline">
+                className="text-violet-600 font-medium hover:underline">
                 {mode === 'login' ? 'Sign up' : 'Sign in'}
               </button>
             </p>

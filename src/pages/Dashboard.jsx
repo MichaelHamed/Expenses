@@ -106,7 +106,7 @@ function GaugeChart({ spent, income }) {
   const arc = circ / 2
   const pct = income > 0 ? Math.min(spent / income, 1) : 0
   const filled = pct * arc
-  const color = pct > 0.9 ? '#ef4444' : pct > 0.7 ? '#f59e0b' : '#6366f1'
+  const color = pct > 0.9 ? '#ef4444' : pct > 0.7 ? '#f59e0b' : '#7c3aed'
   return (
     <div className="flex flex-col items-center w-full">
       <svg viewBox="0 0 200 105" className="w-full max-w-xs">
@@ -143,7 +143,7 @@ function CalendarWidget() {
       .then(({ data }) => {
         const map = {}
         ;(data || []).forEach(e => {
-          if (!map[e.date]) map[e.date] = { total: 0, color: e.categories?.color || '#6366f1' }
+          if (!map[e.date]) map[e.date] = { total: 0, color: e.categories?.color || '#7c3aed' }
           map[e.date].total += Number(e.amount)
         })
         setDayData(map)
@@ -183,8 +183,8 @@ function CalendarWidget() {
           const isToday = now.getFullYear() === year && now.getMonth() === month && now.getDate() === d
           const expense = dayData[dateKey]
           return (
-            <div key={i} className={`flex flex-col items-center justify-center rounded-lg py-1 ${isToday ? 'bg-indigo-100 dark:bg-indigo-900/40' : ''}`}>
-              <span className={`text-xs leading-none ${isToday ? 'font-bold text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-slate-300'}`}>{d}</span>
+            <div key={i} className={`flex flex-col items-center justify-center rounded-lg py-1 ${isToday ? 'bg-violet-100 dark:bg-violet-900/40' : ''}`}>
+              <span className={`text-xs leading-none ${isToday ? 'font-bold text-violet-600 dark:text-violet-400' : 'text-gray-600 dark:text-slate-300'}`}>{d}</span>
               {expense
                 ? <div className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ backgroundColor: expense.color }} />
                 : <div className="w-1.5 h-1.5 mt-0.5" />}
@@ -334,16 +334,16 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
             {/* Hero — the ONE coloured card */}
-            <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl p-6 text-white flex flex-col justify-between">
+            <div className="bg-gradient-to-br from-violet-500 to-violet-700 rounded-2xl p-6 text-white flex flex-col justify-between">
               <div>
-                <p className="text-indigo-200 text-sm">{getGreeting()},</p>
+                <p className="text-violet-200 text-sm">{getGreeting()},</p>
                 <h3 className="text-2xl font-bold mt-0.5">{displayName}</h3>
-                <p className="text-indigo-200 text-xs mt-1">
+                <p className="text-violet-200 text-xs mt-1">
                   {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
               </div>
               <div className="mt-4">
-                <div className="flex justify-between text-xs text-indigo-200 mb-1">
+                <div className="flex justify-between text-xs text-violet-200 mb-1">
                   <span>Pay period progress</span>
                   <span>{isCurrentPeriod ? `${periodPct}% · ${daysLeft}d left` : `${fmtDate(periodStart)} – ${fmtDate(periodEnd)}`}</span>
                 </div>
@@ -358,9 +358,9 @@ export default function Dashboard() {
                     { label: 'Daily budget', value: dailyAllowance ? `${fmt(dailyAllowance)}/day` : '—', sub: dailyAllowance ? `${daysLeft}d until ${fmtDate(periodEnd)}` : null },
                   ].map(({ label, value, sub, subColor, valueColor }) => (
                     <div key={label} className="bg-white/10 rounded-xl p-3">
-                      <p className="text-xs text-indigo-200">{label}</p>
+                      <p className="text-xs text-violet-200">{label}</p>
                       <p className={`text-sm font-bold mt-0.5 ${valueColor || ''}`}>{value}</p>
-                      {sub && <p className={`text-xs mt-0.5 ${subColor || 'text-indigo-300'}`}>{sub}</p>}
+                      {sub && <p className={`text-xs mt-0.5 ${subColor || 'text-violet-300'}`}>{sub}</p>}
                     </div>
                   ))}
                 </div>
@@ -375,7 +375,7 @@ export default function Dashboard() {
                 <GaugeChart spent={spent} income={income} />
               </div>
               {income === 0 && (
-                <Link to="/income" className="text-xs text-indigo-600 hover:underline mt-2">+ Add income to see gauge</Link>
+                <Link to="/income" className="text-xs text-violet-600 hover:underline mt-2">+ Add income to see gauge</Link>
               )}
             </Card>
 
@@ -419,7 +419,7 @@ export default function Dashboard() {
             <Card className="col-span-1 md:col-span-2 self-start">
               <div className="flex items-center justify-between mb-4">
                 <CardTitle>Category Breakdown</CardTitle>
-                <Link to="/expenses" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">View all</Link>
+                <Link to="/expenses" className="text-xs text-violet-600 dark:text-violet-400 hover:underline">View all</Link>
               </div>
               {categoryData.length === 0 ? (
                 <div className="text-center py-8 text-gray-300 dark:text-slate-600 text-sm">No expenses this period</div>
@@ -465,20 +465,20 @@ export default function Dashboard() {
             <Card>
               <div className="flex items-center justify-between mb-4">
                 <CardTitle>Upcoming Payments</CardTitle>
-                <Link to="/recurring" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Manage</Link>
+                <Link to="/recurring" className="text-xs text-violet-600 dark:text-violet-400 hover:underline">Manage</Link>
               </div>
               {upcoming.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-3xl mb-2">📅</p>
                   <p className="text-sm text-gray-500 dark:text-slate-400">No payments due</p>
                   <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">in the next 14 days</p>
-                  <Link to="/recurring" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-3 inline-block">+ Add manually</Link>
+                  <Link to="/recurring" className="text-xs text-violet-600 dark:text-violet-400 hover:underline mt-3 inline-block">+ Add manually</Link>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {upcoming.map(r => {
                     const urgencyPct = Math.max(Math.round(((14 - r.days) / 14) * 100), 4)
-                    const barColor = r.days === 0 ? '#ef4444' : r.days <= 3 ? '#f59e0b' : '#6366f1'
+                    const barColor = r.days === 0 ? '#ef4444' : r.days <= 3 ? '#f59e0b' : '#7c3aed'
                     return (
                       <div key={r.id}>
                         <div className="flex items-center justify-between mb-1.5">
@@ -524,7 +524,7 @@ export default function Dashboard() {
             <Card className="col-span-1 md:col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <CardTitle>Recent Transactions</CardTitle>
-                <Link to="/expenses" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">View all</Link>
+                <Link to="/expenses" className="text-xs text-violet-600 dark:text-violet-400 hover:underline">View all</Link>
               </div>
               {recentExpenses.length === 0 ? (
                 <div className="text-center py-8 text-gray-300 dark:text-slate-600 text-xs">No transactions this period</div>

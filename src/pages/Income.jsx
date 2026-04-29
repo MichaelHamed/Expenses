@@ -48,19 +48,19 @@ function IncomeForm({ onSaved, editItem, onCancel }) {
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
           <input type="date" value={form.date} onChange={e => set('date', e.target.value)} required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Amount (£)</label>
           <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required
             placeholder="0.00"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
         </div>
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">Source</label>
         <select value={form.source} onChange={e => set('source', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
           {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
@@ -68,7 +68,7 @@ function IncomeForm({ onSaved, editItem, onCancel }) {
         <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
         <input type="text" value={form.notes} onChange={e => set('notes', e.target.value)}
           placeholder="Optional note"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
       </div>
       {error && <p className="text-red-600 text-xs">{error}</p>}
       <div className="flex gap-2">
@@ -126,15 +126,15 @@ export default function Income() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
-            className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+            className="md:hidden px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
             + Add
           </button>
           <select value={month} onChange={e => setMonth(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
             {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
           </select>
           <select value={year} onChange={e => setYear(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
             {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -182,7 +182,7 @@ export default function Income() {
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-green-700">{fmt(e.amount)}</span>
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                      <button onClick={() => { setEditItem(e); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
+                      <button onClick={() => { setEditItem(e); setShowMobileForm(true) }} className="text-xs text-violet-600 hover:underline">Edit</button>
                       <button onClick={() => handleDelete(e.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                     </div>
                   </div>

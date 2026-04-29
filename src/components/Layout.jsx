@@ -72,25 +72,25 @@ function QuickAddDrawer({ onClose }) {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
                 <input type="date" value={form.date} onChange={e => set('date', e.target.value)} required
-                  className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Amount (£)</label>
                 <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required
                   placeholder="0.00" inputMode="decimal"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-500" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Description</label>
               <input type="text" value={form.description} onChange={e => set('description', e.target.value)}
                 placeholder="e.g. Tesco weekly shop" autoComplete="off"
-                className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
               <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                className="w-full border border-gray-300 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white">
                 <option value="">— Uncategorised —</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -104,7 +104,7 @@ function QuickAddDrawer({ onClose }) {
                       form.payment_type === val
                         ? val === 'DD' ? 'bg-red-500 text-white border-red-500'
                         : val === 'SO' ? 'bg-amber-500 text-white border-amber-500'
-                        : 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-violet-600 text-white border-violet-600'
                         : 'bg-white text-gray-600 border-gray-300'
                     }`}>
                     {label}
@@ -114,7 +114,7 @@ function QuickAddDrawer({ onClose }) {
             </div>
             {error && <p className="text-red-600 text-sm bg-red-50 px-3 py-2 rounded-xl">{error}</p>}
             <button type="submit" disabled={saving}
-              className="w-full bg-indigo-600 text-white py-3.5 rounded-xl text-base font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+              className="w-full bg-violet-600 text-white py-3.5 rounded-xl text-base font-semibold hover:bg-violet-700 disabled:opacity-50 transition-colors">
               {saving ? 'Saving...' : 'Save Expense'}
             </button>
           </form>
@@ -155,7 +155,7 @@ export default function Layout({ session }) {
             <NavLink key={to} to={to} end={end}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  isActive ? 'bg-violet-50 text-violet-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}>
               <span>{icon}</span>{label}
             </NavLink>
@@ -186,7 +186,7 @@ export default function Layout({ session }) {
           <NavLink to="/" end
             className={({ isActive }) =>
               `flex flex-col items-center justify-center py-3 px-6 text-xs font-medium transition-colors ${
-                isActive ? 'text-indigo-600' : 'text-gray-400'
+                isActive ? 'text-violet-600' : 'text-gray-400'
               }`}>
             <span className="text-2xl mb-0.5">📊</span>
             <span>Dashboard</span>
@@ -195,7 +195,7 @@ export default function Layout({ session }) {
           {/* Big + button */}
           <button
             onClick={() => setShowQuickAdd(true)}
-            className="flex flex-col items-center justify-center -mt-6 w-16 h-16 bg-indigo-600 rounded-full shadow-lg text-white hover:bg-indigo-700 active:scale-95 transition-all">
+            className="flex flex-col items-center justify-center -mt-6 w-16 h-16 bg-violet-600 rounded-full shadow-lg text-white hover:bg-violet-700 active:scale-95 transition-all">
             <span className="text-3xl leading-none">+</span>
           </button>
 
@@ -225,7 +225,7 @@ export default function Layout({ session }) {
                 onClick={() => setShowMore(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'
+                    isActive ? 'bg-violet-50 text-violet-700' : 'text-gray-700 hover:bg-gray-50'
                   }`}>
                 <span className="text-xl">{icon}</span>{label}
               </NavLink>

@@ -196,7 +196,7 @@ export default function Analytics() {
           <p className="text-gray-500 text-sm mt-0.5">Trends, insights and spending patterns</p>
         </div>
         <select value={year} onChange={e => setYear(Number(e.target.value))}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
           {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
@@ -209,7 +209,7 @@ export default function Analytics() {
             {[
               { label: 'Total Income', value: fmt(totalIncome), color: 'text-green-600' },
               { label: 'Total Spent', value: fmt(totalSpent), color: 'text-red-500' },
-              { label: 'Net Saved', value: fmt(totalIncome - totalSpent), color: totalIncome - totalSpent >= 0 ? 'text-indigo-600' : 'text-red-500' },
+              { label: 'Net Saved', value: fmt(totalIncome - totalSpent), color: totalIncome - totalSpent >= 0 ? 'text-violet-600' : 'text-red-500' },
               { label: 'Avg Savings Rate', value: `${Math.round(avgSavingsRate)}%`, color: avgSavingsRate >= 20 ? 'text-green-600' : avgSavingsRate >= 10 ? 'text-amber-600' : 'text-red-500' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -301,7 +301,7 @@ export default function Analytics() {
                           </div>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-1.5 ml-6">
-                          <div className="h-1.5 rounded-full bg-indigo-400 transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                          <div className="h-1.5 rounded-full bg-violet-400 transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
                         </div>
                       </div>
                     )

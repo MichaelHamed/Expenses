@@ -111,20 +111,20 @@ function SubForm({ editItem, onSaved, onCancel }) {
         <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Service name</label>
         <input value={form.name} onChange={e => set('name', e.target.value)} required
           placeholder="e.g. Netflix, Microsoft 365"
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" />
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white" />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Category</label>
           <select value={form.category} onChange={e => set('category', e.target.value)}
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white">
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white">
             {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Frequency</label>
           <select value={form.billing_frequency} onChange={e => set('billing_frequency', e.target.value)}
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white">
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white">
             <option value="monthly">Monthly</option>
             <option value="annual">Annual</option>
             <option value="fixed">Fixed term</option>
@@ -136,7 +136,7 @@ function SubForm({ editItem, onSaved, onCancel }) {
           <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Amount (£)</label>
           <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required
             placeholder="0.00"
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" />
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white" />
         </div>
         <div>
           {isMonthly ? (
@@ -144,7 +144,7 @@ function SubForm({ editItem, onSaved, onCancel }) {
               <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Day of month</label>
               <input type="number" min="1" max="31" value={form.day_of_month} onChange={e => set('day_of_month', e.target.value)}
                 placeholder="e.g. 28"
-                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" />
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white" />
             </>
           ) : (
             <>
@@ -152,18 +152,18 @@ function SubForm({ editItem, onSaved, onCancel }) {
                 {form.billing_frequency === 'fixed' ? 'End date' : 'Renewal date'}
               </label>
               <input type="date" value={form.next_renewal_date} onChange={e => set('next_renewal_date', e.target.value)}
-                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" />
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white" />
             </>
           )}
         </div>
       </div>
       <div className="flex gap-4">
         <label className="flex items-center gap-1.5 cursor-pointer">
-          <input type="checkbox" checked={form.auto_renew} onChange={e => set('auto_renew', e.target.checked)} className="rounded accent-indigo-600" />
+          <input type="checkbox" checked={form.auto_renew} onChange={e => set('auto_renew', e.target.checked)} className="rounded accent-violet-600" />
           <span className="text-xs text-gray-600 dark:text-slate-400">Auto-renews</span>
         </label>
         <label className="flex items-center gap-1.5 cursor-pointer">
-          <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} className="rounded accent-indigo-600" />
+          <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} className="rounded accent-violet-600" />
           <span className="text-xs text-gray-600 dark:text-slate-400">Active</span>
         </label>
       </div>
@@ -171,12 +171,12 @@ function SubForm({ editItem, onSaved, onCancel }) {
         <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Notes</label>
         <input value={form.notes} onChange={e => set('notes', e.target.value)}
           placeholder="Optional"
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white" />
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-700 dark:text-white" />
       </div>
       {error && <p className="text-red-600 text-xs">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={saving}
-          className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 bg-violet-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50">
           {saving ? 'Saving…' : editItem ? 'Update' : 'Add Subscription'}
         </button>
         {editItem && (
@@ -301,12 +301,12 @@ export default function Subscriptions() {
         <div className="flex items-center gap-2">
           {subs.length === 0 && !loading && (
             <button onClick={seedData} disabled={seeding}
-              className="hidden md:block px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 border border-indigo-200 disabled:opacity-50 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700">
+              className="hidden md:block px-4 py-2 bg-violet-50 text-violet-700 rounded-lg text-sm font-medium hover:bg-violet-100 border border-violet-200 disabled:opacity-50 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700">
               {seeding ? 'Loading…' : '✨ Load my subscriptions'}
             </button>
           )}
           <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
-            className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+            className="md:hidden px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
             + Add
           </button>
         </div>
@@ -346,7 +346,7 @@ export default function Subscriptions() {
                     className="w-full rounded-lg"
                     style={{
                       height: `${Math.max((m.total / maxMonthTotal) * 100, 6)}%`,
-                      backgroundColor: m.isCurrent ? '#6366f1' : '#c7d2fe',
+                      backgroundColor: m.isCurrent ? '#7c3aed' : '#ddd6fe',
                     }}
                   />
                 )}
@@ -363,7 +363,7 @@ export default function Subscriptions() {
               <div className="text-xs text-gray-500 dark:text-slate-400 mt-1 text-center">
                 {m.total > 0 ? `£${Math.round(m.total)}` : '—'}
               </div>
-              {m.isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 mt-0.5" />}
+              {m.isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-violet-600 mt-0.5" />}
             </div>
           ))}
         </div>
@@ -386,7 +386,7 @@ export default function Subscriptions() {
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       urgent ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                       : soon ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
-                      : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
+                      : 'bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400'
                     }`}>
                       {s.days === 0 ? 'Today!' : s.days === 1 ? 'Tomorrow' : `${s.days} days`}
                     </span>
@@ -400,7 +400,7 @@ export default function Subscriptions() {
                   <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
                     <button
                       onClick={() => { setEditItem(s); setShowMobileForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                      className="flex-1 text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline text-center">
+                      className="flex-1 text-xs text-violet-600 dark:text-violet-400 font-medium hover:underline text-center">
                       Edit
                     </button>
                     <button
@@ -454,7 +454,7 @@ export default function Subscriptions() {
                 return (
                   <div key={s.id}
                     className={`flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 group ${!s.is_active ? 'opacity-40' : ''}`}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-indigo-50 dark:bg-indigo-900/30">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-violet-50 dark:bg-violet-900/30">
                       {categoryIcon(s.category)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -488,7 +488,7 @@ export default function Subscriptions() {
                         className="text-xs px-2 py-0.5 rounded-full border border-gray-300 dark:border-slate-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-600">
                         {s.is_active ? 'Pause' : 'Resume'}
                       </button>
-                      <button onClick={() => { setEditItem(s); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
+                      <button onClick={() => { setEditItem(s); setShowMobileForm(true) }} className="text-xs text-violet-600 hover:underline">Edit</button>
                       <button onClick={() => deleteSub(s.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                     </div>
                   </div>
@@ -525,7 +525,7 @@ export default function Subscriptions() {
                     </div>
                   ))}
                   <p className="text-xs text-gray-400 text-right pt-1">
-                    Managed in <a href="/recurring" className="text-indigo-500 hover:underline">Direct Debits →</a>
+                    Managed in <a href="/recurring" className="text-violet-500 hover:underline">Direct Debits →</a>
                   </p>
                 </>
               )}

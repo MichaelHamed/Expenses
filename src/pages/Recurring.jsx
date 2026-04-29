@@ -74,25 +74,25 @@ function RecurringForm({ categories, onSaved, editItem, onCancel }) {
         <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
         <input type="text" value={form.name} onChange={e => set('name', e.target.value)} required
           placeholder="e.g. ScottishPower, Netflix"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Amount (£)</label>
           <input type="number" step="0.01" min="0" value={form.amount} onChange={e => set('amount', e.target.value)} required
             placeholder="0.00"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Day of month</label>
           <input type="number" min="1" max="31" value={form.day_of_month} onChange={e => set('day_of_month', e.target.value)} required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
         </div>
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">If day falls on a weekend</label>
         <select value={form.weekend_rule} onChange={e => set('weekend_rule', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
           <option value="none">Pay on exact day</option>
           <option value="before">Pay Friday before</option>
           <option value="after">Pay Monday after</option>
@@ -102,7 +102,7 @@ function RecurringForm({ categories, onSaved, editItem, onCancel }) {
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
           <select value={form.type} onChange={e => set('type', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
             <option value="DD">Direct Debit (DD)</option>
             <option value="SO">Standing Order (SO)</option>
           </select>
@@ -110,7 +110,7 @@ function RecurringForm({ categories, onSaved, editItem, onCancel }) {
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
           <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
             <option value="">— Uncategorised —</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -118,13 +118,13 @@ function RecurringForm({ categories, onSaved, editItem, onCancel }) {
       </div>
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)}
-          className="rounded accent-indigo-600" />
+          className="rounded accent-violet-600" />
         <span className="text-sm text-gray-600">Active</span>
       </label>
       {error && <p className="text-red-600 text-xs">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={saving}
-          className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+          className="flex-1 bg-violet-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50">
           {saving ? 'Saving...' : editItem ? 'Update' : 'Add Payment'}
         </button>
         {editItem && (
@@ -208,7 +208,7 @@ export default function Recurring() {
               className={`text-xs px-2 py-0.5 rounded-full border ${p.is_active ? 'text-gray-500 border-gray-300 hover:bg-gray-100' : 'text-green-600 border-green-300 hover:bg-green-50'}`}>
               {p.is_active ? 'Pause' : 'Resume'}
             </button>
-            <button onClick={() => { setEditItem(p); setShowMobileForm(true) }} className="text-xs text-indigo-600 hover:underline">Edit</button>
+            <button onClick={() => { setEditItem(p); setShowMobileForm(true) }} className="text-xs text-violet-600 hover:underline">Edit</button>
             <button onClick={() => handleDelete(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function Recurring() {
           <p className="text-gray-500 text-sm mt-0.5">Manage your direct debits and standing orders</p>
         </div>
         <button onClick={() => { setShowMobileForm(true); setEditItem(null) }}
-          className="md:hidden px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+          className="md:hidden px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
           + Add
         </button>
       </div>
